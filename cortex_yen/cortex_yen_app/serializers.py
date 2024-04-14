@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import CustomUser
+from .models import CustomUser, Fabric, Order, ProductCategory
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -66,3 +66,41 @@ class UserLoginSerializer(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
+
+
+class ProductCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductCategory
+        fields = ["id", "name", "description"]
+
+
+class FabricSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Fabric
+        fields = [
+            "id",
+            "product_category",
+            "title",
+            "description",
+            "composition",
+            "weight",
+            "finish",
+            "available_colors",
+            "item_code",
+            "created_at",
+        ]
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "fabric",
+            "color",
+            "quantity",
+            "customer_name",
+            "customer_email",
+            "order_date",
+            "created_at",
+        ]

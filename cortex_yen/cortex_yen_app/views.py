@@ -6,10 +6,12 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponseRedirect
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
+from rest_framework import generics
+from django.db.models import Count
 from django.urls import reverse_lazy
 
-from .models import CustomUser
-from .serializers import UserSerializer, UserLoginSerializer
+from .models import CustomUser, ProductCategory
+from .serializers import ProductCategorySerializer, UserSerializer, UserLoginSerializer
 
 
 class UserRegistrationAPIView(APIView):
@@ -60,3 +62,13 @@ class CustomPasswordResetView(PasswordResetView):
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     success_url = reverse_lazy("password_reset_complete")
+
+
+class ProductCategoryListAPIView(generics.ListAPIView):
+    serializer_class = ProductCategorySerializer
+
+    def get_queryset(self):
+        queryset = ProductCategory.objects.annotate(
+            total_orders=Count("fabric__order")
+        ).order_by("-total_orders")
+        return queryset
