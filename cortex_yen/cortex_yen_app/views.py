@@ -10,8 +10,14 @@ from rest_framework import generics
 from django.db.models import Count
 from django.urls import reverse_lazy
 
-from .models import CustomUser, ProductCategory
-from .serializers import ProductCategorySerializer, UserSerializer, UserLoginSerializer
+from .models import CustomUser, Fabric, ProductCategory
+from .serializers import (
+    FabricSerializer,
+    OrderSerializer,
+    ProductCategorySerializer,
+    UserSerializer,
+    UserLoginSerializer,
+)
 
 
 class UserRegistrationAPIView(APIView):
@@ -72,3 +78,22 @@ class ProductCategoryListAPIView(generics.ListAPIView):
             total_orders=Count("fabric__order")
         ).order_by("-total_orders")
         return queryset
+
+
+class FabricListAPIView(generics.ListAPIView):
+    queryset = Fabric.objects.all()
+    serializer_class = FabricSerializer
+
+
+class FabricDetailAPIView(generics.RetrieveAPIView):
+    queryset = Fabric.objects.all()
+    serializer_class = FabricSerializer
+
+
+class OrderCreateAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = OrderSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
