@@ -1,19 +1,32 @@
 # urls.py
-
-from django.urls import path
+from django.urls import path, include
+from django.contrib.auth import views as auth_views
+from rest_framework import routers
 from .views import (
+    BestSellingFabricsAPIView,
+    CustomPasswordResetConfirmView,
+    CustomPasswordResetView,
     EmailVerificationView,
     FabricDetailAPIView,
     FabricListAPIView,
-    OrderCreateAPIView,
+    FavoriteFabricsListView,
+    GoogleLoginAPIView,
+    OrderViewSet,
     ProductCategoryListAPIView,
+    ToggleFavoriteView,
     UserRegistrationAPIView,
     UserLoginAPIView,
 )
 
+router = routers.DefaultRouter()
+router.register(r"orders", OrderViewSet)
+
+
 urlpatterns = [
+    path("", include(router.urls)),
     path("api/register/", UserRegistrationAPIView.as_view(), name="user_registration"),
     path("api/login/", UserLoginAPIView.as_view(), name="user_login"),
+    path("api/google-login/", GoogleLoginAPIView.as_view(), name="google_login"),
     path(
         "api/verify-email/<str:verification_token>/",
         EmailVerificationView.as_view(),
@@ -26,5 +39,32 @@ urlpatterns = [
     ),
     path("fabrics/", FabricListAPIView.as_view(), name="fabric-list"),
     path("fabrics/<int:pk>/", FabricDetailAPIView.as_view(), name="fabric-detail"),
-    path("orders/create/", OrderCreateAPIView.as_view(), name="order-create"),
+    path("toggle_favorite/", ToggleFavoriteView.as_view(), name="toggle-favorite"),
+    path(
+        "favorite_fabrics/",
+        FavoriteFabricsListView.as_view(),
+        name="favorite-fabrics-list",
+    ),
+    # Custom password reset views
+    path("password_reset/", CustomPasswordResetView.as_view(), name="password_reset"),
+    path(
+        "password_reset/done/",
+        auth_views.PasswordResetDoneView.as_view(),
+        name="password_reset_done",
+    ),
+    path(
+        "reset/<uidb64>/<token>/",
+        CustomPasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
+    path(
+        "reset/done/",
+        auth_views.PasswordResetCompleteView.as_view(),
+        name="password_reset_complete",
+    ),
+    path(
+        "best_selling_fabrics/",
+        BestSellingFabricsAPIView.as_view(),
+        name="best-selling-fabrics",
+    ),
 ]
