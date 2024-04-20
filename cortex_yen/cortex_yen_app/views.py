@@ -1,5 +1,6 @@
 # views.py
 
+from django.shortcuts import get_object_or_404
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.response import Response
 from rest_framework import status
@@ -166,8 +167,26 @@ class FavoriteFabricsListView(generics.ListAPIView):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all()
+
     serializer_class = OrderSerializer
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [
+                permissions.IsAuthenticated()
+            ]  # Require authentication for listing and retrieving orders
+        return super().get_permissions()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.queryset.filter(customer_email=request.user.email)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        queryset = self.queryset.filter(customer_email=request.user.email)
+        order = get_object_or_404(queryset, pk=kwargs["pk"])
+        serializer = self.get_serializer(order)
+        return Response(serializer.data)
 
 
 class ToggleHotSellingView(generics.UpdateAPIView):
