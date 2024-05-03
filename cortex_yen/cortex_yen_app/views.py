@@ -29,7 +29,9 @@ class GoogleLoginAPIView(APIView):
         id_token_value = request.data.get("idToken")  # Get ID token from frontend
 
         # Specify your Google OAuth2 Client ID
-        CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
+        CLIENT_ID = (
+            "81090684417-hhflg4bqed9akoo0seelvuirrc3dffv8.apps.googleusercontent.com"
+        )
 
         try:
             # Verify and decode the ID token using the Google OAuth2 Client ID
@@ -167,15 +169,8 @@ class FavoriteFabricsListView(generics.ListAPIView):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
-
-    def get_permissions(self):
-        if self.action in ["list", "retrieve"]:
-            return [
-                permissions.IsAuthenticated()
-            ]  # Require authentication for listing and retrieving orders
-        return super().get_permissions()
 
     def list(self, request, *args, **kwargs):
         queryset = self.queryset.filter(customer_email=request.user.email)
