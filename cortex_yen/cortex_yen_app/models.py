@@ -85,3 +85,20 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.order} - {self.fabric}"
+
+from django.db import models
+
+class Event(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    date = models.DateField()
+    time = models.TimeField()
+    image_url = models.URLField()
+    location = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+
+
+    
+    def __str__(self):
+        return self.title

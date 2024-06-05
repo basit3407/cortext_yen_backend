@@ -7,6 +7,7 @@ from .views import (
     CustomPasswordResetConfirmView,
     CustomPasswordResetView,
     EmailVerificationView,
+    EventViewSet,
     FabricDetailAPIView,
     FabricListAPIView,
     FavoriteFabricsListView,
@@ -20,6 +21,8 @@ from .views import (
 
 router = routers.DefaultRouter()
 router.register(r"orders", OrderViewSet)
+router.register(r'events', EventViewSet)
+
 
 
 urlpatterns = [

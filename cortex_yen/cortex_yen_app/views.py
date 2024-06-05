@@ -13,8 +13,9 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from django.db.models import Count
 from django.urls import reverse_lazy
-from .models import CustomUser, Fabric, Favorite, Order, ProductCategory
+from .models import CustomUser, Event, Fabric, Favorite, Order, ProductCategory
 from .serializers import (
+    EventSerializer,
     FabricSerializer,
     FavoriteSerializer,
     OrderSerializer,
@@ -205,3 +206,9 @@ class BestSellingFabricsAPIView(generics.ListAPIView):
         return Fabric.objects.annotate(num_orders=Count("orderitem")).order_by(
             "-num_orders"
         )
+        
+        
+class EventViewSet(viewsets.ModelViewSet):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+
