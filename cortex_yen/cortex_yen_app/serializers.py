@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import CustomUser, Event, Fabric, Favorite, Order, OrderItem, ProductCategory
+from .models import Blog, CustomUser, Event, Fabric, Favorite, Order, OrderItem, ProductCategory
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -108,4 +108,10 @@ class OrderSerializer(serializers.ModelSerializer):
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
+        fields = '__all__'
+
+
+class BlogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Blog
         fields = '__all__'

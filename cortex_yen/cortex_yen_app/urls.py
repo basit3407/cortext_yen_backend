@@ -4,6 +4,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework import routers
 from .views import (
     BestSellingFabricsAPIView,
+    BlogViewSet,
     CustomPasswordResetConfirmView,
     CustomPasswordResetView,
     EmailVerificationView,
@@ -22,16 +23,18 @@ from .views import (
 router = routers.DefaultRouter()
 router.register(r"orders", OrderViewSet)
 router.register(r'events', EventViewSet)
+router.register(r'blogs', BlogViewSet)
+
 
 
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("api/register/", UserRegistrationAPIView.as_view(), name="user_registration"),
-    path("api/login/", UserLoginAPIView.as_view(), name="user_login"),
-    path("api/google-login/", GoogleLoginAPIView.as_view(), name="google_login"),
+    path("register/", UserRegistrationAPIView.as_view(), name="user_registration"),
+    path("login/", UserLoginAPIView.as_view(), name="user_login"),
+    path("google-login/", GoogleLoginAPIView.as_view(), name="google_login"),
     path(
-        "api/verify-email/<str:verification_token>/",
+        "verify-email/<str:verification_token>/",
         EmailVerificationView.as_view(),
         name="email_verification",
     ),

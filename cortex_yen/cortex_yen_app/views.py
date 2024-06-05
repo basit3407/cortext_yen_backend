@@ -13,8 +13,9 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from django.db.models import Count
 from django.urls import reverse_lazy
-from .models import CustomUser, Event, Fabric, Favorite, Order, ProductCategory
+from .models import Blog, CustomUser, Event, Fabric, Favorite, Order, ProductCategory
 from .serializers import (
+    BlogSerializer,
     EventSerializer,
     FabricSerializer,
     FavoriteSerializer,
@@ -212,3 +213,8 @@ class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
 
+
+
+class BlogViewSet(viewsets.ModelViewSet):
+    queryset = Blog.objects.all()
+    serializer_class = BlogSerializer
