@@ -11,6 +11,8 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from django.db.models import Count
 from django.urls import reverse_lazy
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from .models import Blog, CustomUser, Event, Fabric, Favorite, Order, ProductCategory
 from .serializers import (
     BlogSerializer,
@@ -25,39 +27,39 @@ from .serializers import (
 
 
 class GoogleLoginAPIView(APIView):
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "idToken": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="Google ID token"
+                ),
+            },
+        ),
+        responses={200: "Success", 400: "Invalid token", 401: "Authentication failed"},
+    )
     def post(self, request):
-        id_token_value = request.data.get("idToken")  # Get ID token from frontend
+        id_token_value = request.data.get("idToken")
 
-        # Specify your Google OAuth2 Client ID
         CLIENT_ID = (
             "81090684417-hhflg4bqed9akoo0seelvuirrc3dffv8.apps.googleusercontent.com"
         )
 
         try:
-            # Verify and decode the ID token using the Google OAuth2 Client ID
             decoded_token = id_token.verify_oauth2_token(
                 id_token_value, requests.Request(), CLIENT_ID
             )
-
-            # Extract user information from decoded token
             email = decoded_token["email"]
 
-            # Check if user with this email exists in the database
             try:
                 user = CustomUser.objects.get(email=email)
             except CustomUser.DoesNotExist:
-                # Create a new user if the email doesn't exist
-                user = CustomUser.objects.create_user(
-                    email=email, username=email
-                )  # Use email as username
+                user = CustomUser.objects.create_user(email=email, username=email)
 
-            # Authenticate the user (check if user exists and return the user object)
             authenticated_user = authenticate(username=user.username, password=None)
 
             if authenticated_user is not None:
-                # Generate token for the authenticated user
                 token, _ = Token.objects.get_or_create(user=authenticated_user)
-
                 return Response({"token": token.key}, status=status.HTTP_200_OK)
             else:
                 return Response(
@@ -70,16 +72,23 @@ class GoogleLoginAPIView(APIView):
 
 
 class UserRegistrationAPIView(APIView):
+    @swagger_auto_schema(
+        request_body=UserSerializer, responses={201: "Created", 400: "Invalid data"}
+    )
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()  # Create new user
-            token = Token.objects.create(user=user)  # Generate token for user
+            user = serializer.save()
+            token = Token.objects.create(user=user)
             return Response({"token": token.key}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserLoginAPIView(APIView):
+    @swagger_auto_schema(
+        request_body=UserLoginSerializer,
+        responses={200: "Success", 400: "Invalid credentials"},
+    )
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -90,15 +99,22 @@ class UserLoginAPIView(APIView):
 
 
 class EmailVerificationView(APIView):
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "verification_token",
+                openapi.IN_PATH,
+                description="Verification token",
+                type=openapi.TYPE_STRING,
+            )
+        ],
+        responses={302: "Redirect", 400: "Invalid token"},
+    )
     def get(self, request, verification_token):
         try:
             user = CustomUser.objects.get(verification_token=verification_token)
             user.verify_email()
-            # Construct the frontend URL to redirect to
-            frontend_url = (
-                "http://www.test.com/verified"  # Define the frontend URL to redirect to
-            )
-            # Return a redirect response
+            frontend_url = "http://www.test.com/verified"
             return HttpResponseRedirect(redirect_to=frontend_url)
         except CustomUser.DoesNotExist:
             return Response(
@@ -110,9 +126,7 @@ class EmailVerificationView(APIView):
 class CustomPasswordResetView(PasswordResetView):
     email_template_name = "registration/password_reset_email.html"
     success_url = reverse_lazy("password_reset_done")
-    subject_template_name = (
-        "registration/password_reset_subject.txt"  # Optional: Custom subject template
-    )
+    subject_template_name = "registration/password_reset_subject.txt"
 
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
@@ -122,11 +136,11 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
 class ProductCategoryListAPIView(generics.ListAPIView):
     serializer_class = ProductCategorySerializer
 
+    @swagger_auto_schema(responses={200: ProductCategorySerializer(many=True)})
     def get_queryset(self):
-        queryset = ProductCategory.objects.annotate(
+        return ProductCategory.objects.annotate(
             total_orders=Count("fabric__order")
         ).order_by("-total_orders")
-        return queryset
 
 
 class FabricListAPIView(generics.ListAPIView):
@@ -143,6 +157,17 @@ class ToggleFavoriteView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = FavoriteSerializer
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "fabric_id": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="Fabric ID"
+                ),
+            },
+        ),
+        responses={201: "Added to favorites", 204: "Removed from favorites"},
+    )
     def post(self, request):
         fabric_id = request.data.get("fabric_id")
         fabric = Fabric.objects.get(pk=fabric_id)
@@ -164,6 +189,7 @@ class FavoriteFabricsListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = FavoriteSerializer
 
+    @swagger_auto_schema(responses={200: FavoriteSerializer(many=True)})
     def get_queryset(self):
         return Favorite.objects.filter(user=self.request.user)
 
@@ -171,13 +197,15 @@ class FavoriteFabricsListView(generics.ListAPIView):
 class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
-    queryset = Order.objects.all()  # Define the queryset here
+    queryset = Order.objects.all()
 
+    @swagger_auto_schema(responses={200: OrderSerializer(many=True)})
     def list(self, request, *args, **kwargs):
         queryset = self.queryset.filter(customer_email=request.user.email)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(responses={200: OrderSerializer()})
     def retrieve(self, request, *args, **kwargs):
         queryset = self.queryset.filter(customer_email=request.user.email)
         order = get_object_or_404(queryset, pk=kwargs["pk"])
@@ -188,8 +216,9 @@ class OrderViewSet(viewsets.ModelViewSet):
 class ToggleHotSellingView(generics.UpdateAPIView):
     queryset = Fabric.objects.all()
     serializer_class = FabricSerializer
-    permission_classes = [permissions.IsAdminUser]  # Require admin authentication
+    permission_classes = [permissions.IsAdminUser]
 
+    @swagger_auto_schema(responses={200: FabricSerializer()})
     def patch(self, request, *args, **kwargs):
         fabric = self.get_object()
         fabric.is_hot_selling = not fabric.is_hot_selling
@@ -201,8 +230,8 @@ class ToggleHotSellingView(generics.UpdateAPIView):
 class BestSellingFabricsAPIView(generics.ListAPIView):
     serializer_class = FabricSerializer
 
+    @swagger_auto_schema(responses={200: FabricSerializer(many=True)})
     def get_queryset(self):
-        # Get fabrics ordered by the number of associated orders (descending)
         return Fabric.objects.annotate(num_orders=Count("orderitem")).order_by(
             "-num_orders"
         )
