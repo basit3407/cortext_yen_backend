@@ -221,7 +221,7 @@ class ToggleFavoriteView(generics.CreateAPIView):
             },
         ),
         responses={201: "Added to favorites", 204: "Removed from favorites"},
-        security=[{"Token": []}],
+        security=[{"token": []}],
     )
     def post(self, request):
         fabric_id = request.data.get("fabric_id")
@@ -245,7 +245,7 @@ class FavoriteFabricsListView(generics.ListAPIView):
     serializer_class = FavoriteSerializer
 
     @swagger_auto_schema(
-        responses={200: FavoriteSerializer(many=True)}, security=[{"Token": []}]
+        responses={200: FavoriteSerializer(many=True)}, security=[{"token": []}]
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -257,14 +257,14 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
 
     @swagger_auto_schema(
-        responses={200: OrderSerializer(many=True)}, security=[{"Token": []}]
+        responses={200: OrderSerializer(many=True)}, security=[{"token": []}]
     )
     def list(self, request, *args, **kwargs):
         queryset = self.queryset.filter(customer_email=request.user.email)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(responses={200: OrderSerializer()}, security=[{"Token": []}])
+    @swagger_auto_schema(responses={200: OrderSerializer()}, security=[{"token": []}])
     def retrieve(self, request, *args, **kwargs):
         queryset = self.queryset.filter(customer_email=request.user.email)
         order = get_object_or_404(queryset, pk=kwargs["pk"])
@@ -274,7 +274,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(
         request_body=OrderSerializer,
         responses={201: OrderSerializer()},
-        security=[{"Token": []}],
+        security=[{"token": []}],
     )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -285,7 +285,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(
         request_body=OrderSerializer,
         responses={200: OrderSerializer()},
-        security=[{"Token": []}],
+        security=[{"token": []}],
     )
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
