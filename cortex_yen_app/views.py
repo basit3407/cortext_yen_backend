@@ -156,9 +156,27 @@ class CustomPasswordResetView(PasswordResetView):
     success_url = reverse_lazy("password_reset_done")
     subject_template_name = "registration/password_reset_subject.txt"
 
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response(description="Password reset email sent"),
+            400: "Invalid data",
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     success_url = reverse_lazy("password_reset_complete")
+
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response(description="Password reset complete"),
+            400: "Invalid token",
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
 
 class ProductCategoryListAPIView(generics.ListAPIView):
