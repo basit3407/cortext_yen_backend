@@ -1,6 +1,5 @@
-# urls.py
 from django.urls import path, include
-from django.contrib.auth import views as auth_views
+from django.contrib.auth import views as auth_views  # Add this import
 from rest_framework import routers
 from .views import (
     BestSellingFabricsAPIView,
@@ -22,11 +21,8 @@ from .views import (
 
 router = routers.DefaultRouter()
 router.register(r"orders", OrderViewSet)
-router.register(r'events', EventViewSet)
-router.register(r'blogs', BlogViewSet)
-
-
-
+router.register(r"events", EventViewSet)
+router.register(r"blogs", BlogViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -51,7 +47,6 @@ urlpatterns = [
         FavoriteFabricsListView.as_view(),
         name="favorite-fabrics-list",
     ),
-    # Custom password reset views
     path("password_reset/", CustomPasswordResetView.as_view(), name="password_reset"),
     path(
         "password_reset/done/",

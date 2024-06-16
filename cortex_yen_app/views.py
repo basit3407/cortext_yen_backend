@@ -1,17 +1,16 @@
 from django.shortcuts import get_object_or_404
+from django.urls import reverse_lazy
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.response import Response
-from rest_framework import status
 from google.oauth2 import id_token
-from django.contrib.auth import authenticate
 from google.auth.transport import requests
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponseRedirect
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from django.db.models import Count
-from django.urls import reverse_lazy
 from drf_yasg.utils import swagger_auto_schema
+from django.contrib.auth import authenticate
 from drf_yasg import openapi
 from .models import Blog, CustomUser, Event, Fabric, Favorite, Order, ProductCategory
 from .serializers import (
@@ -36,7 +35,17 @@ class GoogleLoginAPIView(APIView):
                 ),
             },
         ),
-        responses={200: "Success", 400: "Invalid token", 401: "Authentication failed"},
+        responses={
+            200: openapi.Response(
+                description="Success",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={"token": openapi.Schema(type=openapi.TYPE_STRING)},
+                ),
+            ),
+            400: "Invalid token",
+            401: "Authentication failed",
+        },
     )
     def post(self, request):
         id_token_value = request.data.get("idToken")
@@ -73,7 +82,17 @@ class GoogleLoginAPIView(APIView):
 
 class UserRegistrationAPIView(APIView):
     @swagger_auto_schema(
-        request_body=UserSerializer, responses={201: "Created", 400: "Invalid data"}
+        request_body=UserSerializer,
+        responses={
+            201: openapi.Response(
+                description="Created",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={"token": openapi.Schema(type=openapi.TYPE_STRING)},
+                ),
+            ),
+            400: "Invalid data",
+        },
     )
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -87,7 +106,16 @@ class UserRegistrationAPIView(APIView):
 class UserLoginAPIView(APIView):
     @swagger_auto_schema(
         request_body=UserLoginSerializer,
-        responses={200: "Success", 400: "Invalid credentials"},
+        responses={
+            200: openapi.Response(
+                description="Success",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={"token": openapi.Schema(type=openapi.TYPE_STRING)},
+                ),
+            ),
+            400: "Invalid credentials",
+        },
     )
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
@@ -147,10 +175,18 @@ class FabricListAPIView(generics.ListAPIView):
     queryset = Fabric.objects.all()
     serializer_class = FabricSerializer
 
+    @swagger_auto_schema(responses={200: FabricSerializer(many=True)})
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
 
 class FabricDetailAPIView(generics.RetrieveAPIView):
     queryset = Fabric.objects.all()
     serializer_class = FabricSerializer
+
+    @swagger_auto_schema(responses={200: FabricSerializer()})
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
 class ToggleFavoriteView(generics.CreateAPIView):
@@ -241,7 +277,19 @@ class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
 
+    @swagger_auto_schema(responses={200: EventSerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class BlogViewSet(viewsets.ModelViewSet):
     queryset = Blog.objects.all()
     serializer_class = BlogSerializer
+
+    @swagger_auto_schema(responses={200: BlogSerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={200: BlogSerializer()})
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
