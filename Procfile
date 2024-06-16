@@ -1,1 +1,1 @@
-web: gunicorn cortex_yen.cortex_yen.wsgi
+web: gunicorn cortex_yen.wsgi
