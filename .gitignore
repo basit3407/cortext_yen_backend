@@ -25,6 +25,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+cortex_yen/settings/local.py
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
