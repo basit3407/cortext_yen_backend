@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 import django_heroku
+import dj_database_url
+
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -91,16 +93,22 @@ WSGI_APPLICATION = "cortex_yen.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "your_database_name",
+#         "USER": "your_database_user",
+#         "PASSWORD": "your_password",
+#         "HOST": "localhost",  # Or database host
+#         "PORT": "5432",  # Or database port
+#     }
+# }
+
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "your_database_name",
-        "USER": "your_database_user",
-        "PASSWORD": "your_password",
-        "HOST": "localhost",  # Or database host
-        "PORT": "5432",  # Or database port
-    }
+    'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
 }
+
 
 
 # Password validation
