@@ -1,5 +1,3 @@
-# views.py
-
 from django.shortcuts import get_object_or_404
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.response import Response
@@ -173,6 +171,7 @@ class FavoriteFabricsListView(generics.ListAPIView):
 class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
+    queryset = Order.objects.all()  # Define the queryset here
 
     def list(self, request, *args, **kwargs):
         queryset = self.queryset.filter(customer_email=request.user.email)
@@ -207,12 +206,11 @@ class BestSellingFabricsAPIView(generics.ListAPIView):
         return Fabric.objects.annotate(num_orders=Count("orderitem")).order_by(
             "-num_orders"
         )
-        
-        
+
+
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
-
 
 
 class BlogViewSet(viewsets.ModelViewSet):
