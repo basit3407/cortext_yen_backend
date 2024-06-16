@@ -1,5 +1,5 @@
 from django.urls import path, include
-from django.contrib.auth import views as auth_views  # Add this import
+from django.contrib.auth import views as auth_views  # Add this impor
 from rest_framework import routers
 from .views import (
     BestSellingFabricsAPIView,
