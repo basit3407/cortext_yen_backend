@@ -143,7 +143,7 @@ class EventSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = Fabric
+        model = Event
         extra_fields = ["photo_url"]
         # Include all fields except the 'photo' field explicitly
         exclude = ["photo"]
@@ -158,7 +158,7 @@ class BlogSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = Fabric
+        model = Blog
         extra_fields = ["photo_url"]
         # Include all fields except the 'photo' field explicitly
         exclude = ["photo"]
