@@ -54,11 +54,13 @@ class UserSerializer(serializers.ModelSerializer):
 
     def send_verification_email(self, user):
         verification_token = user.generate_verification_token()
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [user.email]
         subject = "Verify your email address"
         message = f"Hi {user.username},\n\nPlease click on the following link to verify your email address:\n\n{settings.FRONTEND_URL}/verify-email/{verification_token}/\n\nThanks!"
 
         try:
-            send_mail(subject, message, recipient_list=[user.email])
+            send_mail(subject, message, from_email, recipient_list)
         except Exception as e:
             logger.error(f"Failed to send email, error: {str(e)}")
             raise
