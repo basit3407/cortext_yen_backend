@@ -1,6 +1,15 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import Blog, CustomUser, Event, Fabric, Favorite, Order, OrderItem, ProductCategory
+from .models import (
+    Blog,
+    CustomUser,
+    Event,
+    Fabric,
+    Favorite,
+    Order,
+    OrderItem,
+    ProductCategory,
+)
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -44,7 +53,7 @@ class UserSerializer(serializers.ModelSerializer):
         verification_token = user.generate_verification_token()
         subject = "Verify your email address"
         message = f"Hi {user.username},\n\nPlease click on the following link to verify your email address:\n\n{settings.FRONTEND_URL}/verify-email/{verification_token}/\n\nThanks!"
-        send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email])
+        send_mail(subject, message, recipient_list=[user.email])
 
 
 class UserLoginSerializer(serializers.Serializer):
@@ -104,14 +113,13 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
-        fields = '__all__'
+        fields = "__all__"
 
 
 class BlogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
-        fields = '__all__'
+        fields = "__all__"
