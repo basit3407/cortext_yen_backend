@@ -142,7 +142,7 @@ class EmailVerificationView(APIView):
         try:
             user = CustomUser.objects.get(verification_token=verification_token)
             user.verify_email()
-            frontend_url = "http://www.test.com/verified"
+            frontend_url = "{settings.FRONTEND_URL}/verified"
             return HttpResponseRedirect(redirect_to=frontend_url)
         except CustomUser.DoesNotExist:
             return Response(
