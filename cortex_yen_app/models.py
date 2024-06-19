@@ -4,6 +4,10 @@ from django.contrib.postgres.fields import ArrayField
 from django.utils.crypto import get_random_string
 
 
+class MediaUploads(models.Model):
+    file = models.FileField(upload_to="corlee/uploads/")
+
+
 class CustomUser(AbstractUser):
     name = models.CharField(max_length=255)
     company_name = models.CharField(max_length=255, blank=True, null=True)
@@ -13,6 +17,13 @@ class CustomUser(AbstractUser):
     email = models.EmailField()
     is_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=100, blank=True, null=True)
+    photo = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="user_photos",
+        null=True,
+        blank=True,
+    )
 
     def generate_verification_token(self):
         token = get_random_string(length=32)
@@ -27,19 +38,6 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
-
-
-class MediaUploads(models.Model):
-    file = models.FileField(upload_to="corlee/uploads/")
-    caption = models.CharField(max_length=256, null=True, blank=True)
-    owner = models.ForeignKey(
-        CustomUser,
-        related_name="corlee_uploads",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class ProductCategory(models.Model):
@@ -134,7 +132,7 @@ class Blog(models.Model):
     photo = models.ForeignKey(
         MediaUploads,
         on_delete=models.DO_NOTHING,
-        related_name="profile_photos",
+        related_name="blog_photos",
         null=True,
         blank=True,
     )
