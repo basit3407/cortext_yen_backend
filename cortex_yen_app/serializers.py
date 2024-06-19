@@ -12,6 +12,9 @@ from .models import (
 )
 from django.core.mail import send_mail
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -53,7 +56,12 @@ class UserSerializer(serializers.ModelSerializer):
         verification_token = user.generate_verification_token()
         subject = "Verify your email address"
         message = f"Hi {user.username},\n\nPlease click on the following link to verify your email address:\n\n{settings.FRONTEND_URL}/verify-email/{verification_token}/\n\nThanks!"
-        send_mail(subject, message, recipient_list=[user.email])
+
+        try:
+            send_mail(subject, message, recipient_list=[user.email])
+        except Exception as e:
+            logger.error(f"Failed to send email, error: {str(e)}")
+            raise
 
 
 class UserLoginSerializer(serializers.Serializer):
