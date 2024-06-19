@@ -29,6 +29,19 @@ class CustomUser(AbstractUser):
         return self.username
 
 
+class MediaUploads(models.Model):
+    file = models.FileField(upload_to="corlee/uploads/")
+    caption = models.CharField(max_length=256, null=True, blank=True)
+    owner = models.ForeignKey(
+        CustomUser,
+        related_name="corlee_uploads",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class ProductCategory(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -39,6 +52,13 @@ class ProductCategory(models.Model):
 
 class Fabric(models.Model):
     product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
+    photo = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="fabric_photos",
+        null=True,
+        blank=True,
+    )
     title = models.CharField(max_length=255)
     description = models.CharField(max_length=100)
     composition = models.CharField(max_length=255)
@@ -86,32 +106,40 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.order} - {self.fabric}"
 
+
 class Event(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     date = models.DateField()
     time = models.TimeField()
-    image_url = models.URLField()
+    photo = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="event_photos",
+        null=True,
+        blank=True,
+    )
     location = models.CharField(max_length=255)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
 
-
-    
     def __str__(self):
         return self.title
-    
-    
 
 
 class Blog(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    image_url = models.URLField()
+    photo = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="profile_photos",
+        null=True,
+        blank=True,
+    )
     tags = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return self.title
-

@@ -6,6 +6,7 @@ from .models import (
     Event,
     Fabric,
     Favorite,
+    MediaUploads,
     Order,
     OrderItem,
     ProductCategory,
@@ -15,6 +16,12 @@ from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MediaUploads
+        fields = "__all__"
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -94,9 +101,18 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 
 class FabricSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Fabric
-        fields = "__all__"  # Include all fields for Fabric
+        extra_fields = ["photo_url"]
+        # Include all fields except the 'photo' field explicitly
+        exclude = ["photo"]
+
+    def get_photo_url(self, obj):
+        if obj.photo and obj.photo.file:
+            return obj.photo.file.url
+        return None
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -124,12 +140,30 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class EventSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
+
     class Meta:
-        model = Event
-        fields = "__all__"
+        model = Fabric
+        extra_fields = ["photo_url"]
+        # Include all fields except the 'photo' field explicitly
+        exclude = ["photo"]
+
+    def get_photo_url(self, obj):
+        if obj.photo and obj.photo.file:
+            return obj.photo.file.url
+        return None
 
 
 class BlogSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
+
     class Meta:
-        model = Blog
-        fields = "__all__"
+        model = Fabric
+        extra_fields = ["photo_url"]
+        # Include all fields except the 'photo' field explicitly
+        exclude = ["photo"]
+
+    def get_photo_url(self, obj):
+        if obj.photo and obj.photo.file:
+            return obj.photo.file.url
+        return None
