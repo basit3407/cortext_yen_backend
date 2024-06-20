@@ -5,14 +5,22 @@ from django.utils.crypto import get_random_string
 
 
 class CustomUser(AbstractUser):
+    AUTH_METHOD_CHOICES = (
+        ("google", "Google"),
+        ("email", "Email"),
+    )
+
     name = models.CharField(max_length=255)
     company_name = models.CharField(max_length=255, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     mobile_phone = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
     is_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=100, blank=True, null=True)
+    auth_method = models.CharField(
+        max_length=10, choices=AUTH_METHOD_CHOICES, default="email"
+    )
 
     def generate_verification_token(self):
         token = get_random_string(length=32)
@@ -86,6 +94,7 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.order} - {self.fabric}"
 
+
 class Event(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
@@ -96,12 +105,8 @@ class Event(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=20)
 
-
-    
     def __str__(self):
         return self.title
-    
-    
 
 
 class Blog(models.Model):
@@ -111,7 +116,6 @@ class Blog(models.Model):
     image_url = models.URLField()
     tags = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return self.title
-

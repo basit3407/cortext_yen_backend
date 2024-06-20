@@ -25,7 +25,19 @@ from .serializers import (
 )
 
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from google.auth.transport import requests
+from google.oauth2 import id_token
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
+
 class GoogleLoginAPIView(APIView):
+
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
@@ -40,7 +52,10 @@ class GoogleLoginAPIView(APIView):
                 description="Success",
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
-                    properties={"token": openapi.Schema(type=openapi.TYPE_STRING)},
+                    properties={
+                        "token": openapi.Schema(type=openapi.TYPE_STRING),
+                        "user": UserSerializer,
+                    },
                 ),
             ),
             400: "Invalid token",
@@ -64,12 +79,19 @@ class GoogleLoginAPIView(APIView):
                 user = CustomUser.objects.get(email=email)
             except CustomUser.DoesNotExist:
                 user = CustomUser.objects.create_user(email=email, username=email)
+                user.auth_method = "google"
+                user.is_verified = True
+                user.save()
 
             authenticated_user = authenticate(username=user.username, password=None)
 
             if authenticated_user is not None:
                 token, _ = Token.objects.get_or_create(user=authenticated_user)
-                return Response({"token": token.key}, status=status.HTTP_200_OK)
+                user_data = UserSerializer(user).data
+                return Response(
+                    {"token": token.key, "user": user_data},
+                    status=status.HTTP_200_OK,
+                )
             else:
                 return Response(
                     {"error": "Authentication failed"},
@@ -88,7 +110,10 @@ class UserRegistrationAPIView(APIView):
                 description="Created",
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
-                    properties={"token": openapi.Schema(type=openapi.TYPE_STRING)},
+                    properties={
+                        "token": openapi.Schema(type=openapi.TYPE_STRING),
+                        "user": UserSerializer,
+                    },
                 ),
             ),
             400: "Invalid data",
@@ -99,11 +124,16 @@ class UserRegistrationAPIView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             token = Token.objects.create(user=user)
-            return Response({"token": token.key}, status=status.HTTP_201_CREATED)
+            user_data = UserSerializer(user).data
+            return Response(
+                {"token": token.key, "user": user_data},
+                status=status.HTTP_201_CREATED,
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserLoginAPIView(APIView):
+
     @swagger_auto_schema(
         request_body=UserLoginSerializer,
         responses={
@@ -111,7 +141,10 @@ class UserLoginAPIView(APIView):
                 description="Success",
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
-                    properties={"token": openapi.Schema(type=openapi.TYPE_STRING)},
+                    properties={
+                        "token": openapi.Schema(type=openapi.TYPE_STRING),
+                        "user": UserSerializer,
+                    },
                 ),
             ),
             400: "Invalid credentials",
@@ -122,7 +155,11 @@ class UserLoginAPIView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
             token, _ = Token.objects.get_or_create(user=user)
-            return Response({"token": token.key}, status=status.HTTP_200_OK)
+            user_data = UserSerializer(user).data
+            return Response(
+                {"token": token.key, "user": user_data},
+                status=status.HTTP_200_OK,
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -142,7 +179,7 @@ class EmailVerificationView(APIView):
         try:
             user = CustomUser.objects.get(verification_token=verification_token)
             user.verify_email()
-            frontend_url = "http://www.test.com/verified"
+            frontend_url = "{settings.FRONTEND_URL}/verified"
             return HttpResponseRedirect(redirect_to=frontend_url)
         except CustomUser.DoesNotExist:
             return Response(
@@ -163,6 +200,20 @@ class CustomPasswordResetView(PasswordResetView):
         }
     )
     def post(self, request, *args, **kwargs):
+        email = request.data.get("email")
+        if email:
+            try:
+                user = CustomUser.objects.get(email=email)
+                if user.auth_method == "google":
+                    return Response(
+                        {
+                            "error": "You signed in using Google. Please use Google account recovery."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except CustomUser.DoesNotExist:
+                pass
+
         return super().post(request, *args, **kwargs)
 
 

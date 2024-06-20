@@ -1,6 +1,16 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import Blog, CustomUser, Event, Fabric, Favorite, Order, OrderItem, ProductCategory
+from django.db.utils import IntegrityError
+from .models import (
+    Blog,
+    CustomUser,
+    Event,
+    Fabric,
+    Favorite,
+    Order,
+    OrderItem,
+    ProductCategory,
+)
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -21,6 +31,8 @@ class UserSerializer(serializers.ModelSerializer):
             "address",
             "phone",
             "mobile_phone",
+            "is_verified",
+            "auth_method",
         ]
 
     def create(self, validated_data):
@@ -28,7 +40,12 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop("password", None)
 
         # Create a new CustomUser instance
-        user = CustomUser.objects.create_user(**validated_data)
+        try:
+            user = CustomUser.objects.create_user(**validated_data)
+        except IntegrityError:
+            raise serializers.ValidationError(
+                {"email": "A user with that email already exists."}
+            )
 
         # Set the password for the user
         if password is not None:
@@ -104,14 +121,13 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
-        fields = '__all__'
+        fields = "__all__"
 
 
 class BlogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
-        fields = '__all__'
+        fields = "__all__"
