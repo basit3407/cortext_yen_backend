@@ -298,15 +298,6 @@ class ProductCategoryListAPIView(generics.ListAPIView):
 
 
 class FabricListAPIView(generics.ListAPIView):
-    queryset = Fabric.objects.all()
-    serializer_class = FabricSerializer
-
-    @swagger_auto_schema(responses={200: FabricSerializer(many=True)})
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-
-
-class FabricDetailAPIView(generics.RetrieveAPIView):
     serializer_class = FabricSerializer
 
     @swagger_auto_schema(
@@ -336,6 +327,7 @@ class FabricDetailAPIView(generics.RetrieveAPIView):
                 openapi.IN_QUERY,
                 description="Page number for pagination",
                 type=openapi.TYPE_INTEGER,
+                default=1,
             ),
         ],
         responses={200: FabricSerializer(many=True)},
@@ -374,6 +366,15 @@ class FabricDetailAPIView(generics.RetrieveAPIView):
             queryset = queryset.filter(available_colors__overlap=colors)
 
         return queryset
+
+
+class FabricDetailAPIView(generics.RetrieveAPIView):
+    queryset = Fabric.objects.all()
+    serializer_class = FabricSerializer
+
+    @swagger_auto_schema(responses={200: FabricSerializer()})
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
 class ToggleFavoriteView(generics.CreateAPIView):
