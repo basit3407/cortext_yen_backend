@@ -54,7 +54,26 @@ class GoogleLoginAPIView(APIView):
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "token": openapi.Schema(type=openapi.TYPE_STRING),
-                        "user": UserSerializer,
+                        "user": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "username": openapi.Schema(type=openapi.TYPE_STRING),
+                                "email": openapi.Schema(type=openapi.TYPE_STRING),
+                                "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "company_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "address": openapi.Schema(type=openapi.TYPE_STRING),
+                                "phone": openapi.Schema(type=openapi.TYPE_STRING),
+                                "mobile_phone": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "is_verified": openapi.Schema(
+                                    type=openapi.TYPE_BOOLEAN
+                                ),
+                                "auth_method": openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
                     },
                 ),
             ),
@@ -112,7 +131,26 @@ class UserRegistrationAPIView(APIView):
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "token": openapi.Schema(type=openapi.TYPE_STRING),
-                        "user": UserSerializer,
+                        "user": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "username": openapi.Schema(type=openapi.TYPE_STRING),
+                                "email": openapi.Schema(type=openapi.TYPE_STRING),
+                                "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "company_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "address": openapi.Schema(type=openapi.TYPE_STRING),
+                                "phone": openapi.Schema(type=openapi.TYPE_STRING),
+                                "mobile_phone": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "is_verified": openapi.Schema(
+                                    type=openapi.TYPE_BOOLEAN
+                                ),
+                                "auth_method": openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
                     },
                 ),
             ),
@@ -143,7 +181,26 @@ class UserLoginAPIView(APIView):
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "token": openapi.Schema(type=openapi.TYPE_STRING),
-                        "user": UserSerializer,
+                        "user": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "username": openapi.Schema(type=openapi.TYPE_STRING),
+                                "email": openapi.Schema(type=openapi.TYPE_STRING),
+                                "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "company_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "address": openapi.Schema(type=openapi.TYPE_STRING),
+                                "phone": openapi.Schema(type=openapi.TYPE_STRING),
+                                "mobile_phone": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "is_verified": openapi.Schema(
+                                    type=openapi.TYPE_BOOLEAN
+                                ),
+                                "auth_method": openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
                     },
                 ),
             ),
