@@ -4,6 +4,10 @@ from django.contrib.postgres.fields import ArrayField
 from django.utils.crypto import get_random_string
 
 
+class MediaUploads(models.Model):
+    file = models.FileField(upload_to="corlee/uploads/")
+
+
 class CustomUser(AbstractUser):
     AUTH_METHOD_CHOICES = (
         ("google", "Google"),
@@ -18,6 +22,13 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     is_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=100, blank=True, null=True)
+    photo = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="user_photos",
+        null=True,
+        blank=True,
+    )
     auth_method = models.CharField(
         max_length=10, choices=AUTH_METHOD_CHOICES, default="email"
     )
@@ -47,6 +58,13 @@ class ProductCategory(models.Model):
 
 class Fabric(models.Model):
     product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
+    photo = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="fabric_photos",
+        null=True,
+        blank=True,
+    )
     title = models.CharField(max_length=255)
     description = models.CharField(max_length=100)
     composition = models.CharField(max_length=255)
@@ -100,7 +118,13 @@ class Event(models.Model):
     description = models.TextField()
     date = models.DateField()
     time = models.TimeField()
-    image_url = models.URLField()
+    photo = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="event_photos",
+        null=True,
+        blank=True,
+    )
     location = models.CharField(max_length=255)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
@@ -113,7 +137,13 @@ class Blog(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    image_url = models.URLField()
+    photo = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="blog_photos",
+        null=True,
+        blank=True,
+    )
     tags = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -1,18 +1,28 @@
+from django.db import IntegrityError
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from django.db.utils import IntegrityError
 from .models import (
     Blog,
     CustomUser,
     Event,
     Fabric,
     Favorite,
+    MediaUploads,
     Order,
     OrderItem,
     ProductCategory,
 )
 from django.core.mail import send_mail
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MediaUploads
+        fields = "__all__"
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -59,9 +69,16 @@ class UserSerializer(serializers.ModelSerializer):
 
     def send_verification_email(self, user):
         verification_token = user.generate_verification_token()
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [user.email]
         subject = "Verify your email address"
-        message = f"Hi {user.username},\n\nPlease click on the following link to verify your email address:\n\n{settings.FRONTEND_URL}/verify-email/{verification_token}/\n\nThanks!"
-        send_mail(subject, message, settings.EMAIL_HOST_USER, [user.email])
+        message = f"Hi {user.name},\n\nPlease click on the following link to verify your email address:\n\n{settings.FRONTEND_URL}/verify-email/{verification_token}/\n\nThanks!"
+
+        try:
+            send_mail(subject, message, from_email, recipient_list)
+        except Exception as e:
+            logger.error(f"Failed to send email, error: {str(e)}")
+            raise
 
 
 class UserLoginSerializer(serializers.Serializer):
@@ -92,9 +109,18 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 
 class FabricSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Fabric
-        fields = "__all__"  # Include all fields for Fabric
+        extra_fields = ["photo_url"]
+        # Include all fields except the 'photo' field explicitly
+        exclude = ["photo"]
+
+    def get_photo_url(self, obj):
+        if obj.photo and obj.photo.file:
+            return obj.photo.file.url
+        return None
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -122,12 +148,36 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class EventSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Event
-        fields = "__all__"
+        extra_fields = ["photo_url"]
+        # Include all fields except the 'photo' field explicitly
+        exclude = ["photo"]
+
+    def get_photo_url(self, obj):
+        if obj.photo and obj.photo.file:
+            return obj.photo.file.url
+        return None
 
 
 class BlogSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
+    author_photo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Blog
-        fields = "__all__"
+        extra_fields = ["photo_url", "author_photo_url"]
+        # Include all fields except the 'photo' field explicitly
+        exclude = ["photo"]
+
+    def get_photo_url(self, obj):
+        if obj.photo and obj.photo.file:
+            return obj.photo.file.url
+        return None
+
+    def get_owner_photo_url(self, obj):
+        if obj.author.photo and obj.author.photo.file:
+            return obj.author.photo.file.url
+        return None
