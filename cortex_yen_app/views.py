@@ -1,5 +1,4 @@
 from django.shortcuts import get_object_or_404
-from django.urls import reverse_lazy
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.response import Response
 from google.oauth2 import id_token
@@ -7,7 +6,7 @@ from google.auth.transport import requests
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponseRedirect
-from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
+from django.utils.http import urlsafe_base64_decode
 from django.db.models import Count
 from drf_yasg.utils import swagger_auto_schema
 from django.contrib.auth import authenticate
@@ -20,6 +19,8 @@ from .serializers import (
     FabricSerializer,
     FavoriteSerializer,
     OrderSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     ProductCategorySerializer,
     UserSerializer,
     UserLoginSerializer,
@@ -37,6 +38,13 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator as token_generator
+from django.template.loader import render_to_string
+from django.core.mail import EmailMessage
+from django.contrib.auth.admin import sensitive_post_parameters_m
+from rest_framework.generics import GenericAPIView
 
 
 class GoogleLoginAPIView(APIView):
@@ -248,46 +256,100 @@ class EmailVerificationView(APIView):
             )
 
 
-class CustomPasswordResetView(PasswordResetView):
-    email_template_name = "registration/password_reset_email.html"
-    success_url = reverse_lazy("password_reset_done")
-    subject_template_name = "registration/password_reset_subject.txt"
-
+class CustomPasswordResetView(APIView):
     @swagger_auto_schema(
+        request_body=PasswordResetRequestSerializer,
         responses={
             200: openapi.Response(description="Password reset email sent"),
-            400: "Invalid data",
-        }
+            400: openapi.Response(description="Invalid data or user does not exist"),
+            429: openapi.Response(description="Too many requests"),
+        },
     )
-    def post(self, request, *args, **kwargs):
-        email = request.data.get("email")
-        if email:
-            try:
-                user = CustomUser.objects.get(email=email)
-                if user.auth_method == "google":
-                    return Response(
-                        {
-                            "error": "You signed in using Google. Please use Google account recovery."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-            except CustomUser.DoesNotExist:
-                pass
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return super().post(request, *args, **kwargs)
+        email = serializer.validated_data["email"]
+
+        user = CustomUser.objects.filter(email=email).first()
+
+        if not user:
+            # User with the provided email doesn't exist
+            return Response(
+                {"error": "User with this email does not exist."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.auth_method == "google":
+            return Response(
+                {
+                    "error": "You signed in using Google. Please use Google account recovery."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        reset_url = (
+            f"{settings.FRONTEND_URL}/newPass/{urlsafe_base64_encode(force_bytes(user.pk))}/"
+            f"{token_generator.make_token(user)}/"
+        )
+        name = user.first_name
+
+        subject = "Your password reset request"
+        button_text = "Reset Your Password"
+
+        # Render HTML content with a button
+        html_content = render_to_string(
+            "reset_password_email_template.html",
+            {
+                "name": name,
+                "reset_url": reset_url,
+                "button_text": button_text,
+            },
+        )
+
+        from_email = settings.DEFAULT_FROM_EMAIL
+
+        recipient_list = [email]
+
+        try:
+            email = EmailMessage(subject, html_content, from_email, recipient_list)
+            email.content_subtype = "html"  # Set content type to HTML
+            email.send()
+            return Response(status=status.HTTP_200_OK)
+        except Exception as e:
+            print(f"Error sending email: {e}")
+            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS)
 
 
-class CustomPasswordResetConfirmView(PasswordResetConfirmView):
-    success_url = reverse_lazy("password_reset_complete")
+class CustomPasswordResetConfirmView(GenericAPIView):
+    """
+    Password reset e-mail link is confirmed, therefore
+    this resets the user's password.
+    Accepts the following POST parameters: token, uid,
+    new_password1, new_password2
+    Returns the success/fail message.
+    """
+
+    permission_classes = []
+    serializer_class = PasswordResetConfirmSerializer
+
+    @sensitive_post_parameters_m
+    def dispatch(self, *args, **kwargs):
+        return super(CustomPasswordResetConfirmView, self).dispatch(*args, **kwargs)
 
     @swagger_auto_schema(
+        request_body=PasswordResetConfirmSerializer,
         responses={
-            200: openapi.Response(description="Password reset complete"),
-            400: "Invalid token",
-        }
+            200: openapi.Response(description="Password updated successfully"),
+            400: openapi.Response(description="Invalid data"),
+        },
     )
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=200, data={"message": "Password updated successfully"})
 
 
 class ProductCategoryListAPIView(generics.ListAPIView):

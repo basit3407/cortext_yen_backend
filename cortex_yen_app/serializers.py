@@ -1,6 +1,5 @@
 from django.db import IntegrityError
 from rest_framework import serializers
-from django.contrib.auth import authenticate
 from .models import (
     Blog,
     CustomUser,
@@ -15,6 +14,12 @@ from .models import (
 from django.core.mail import send_mail
 from django.conf import settings
 import logging
+from rest_framework.exceptions import ValidationError
+from django.utils.http import urlsafe_base64_decode as uid_decoder
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth import authenticate
+from django.contrib.auth.forms import SetPasswordForm
 
 logger = logging.getLogger(__name__)
 
@@ -191,3 +196,52 @@ class BlogSerializer(serializers.ModelSerializer):
         if obj.author.photo and obj.author.photo.file:
             return obj.author.photo.file.url
         return None
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """
+    Serializer for requesting a password reset e-mail.
+    """
+
+    new_password1 = serializers.CharField(max_length=128)
+    new_password2 = serializers.CharField(max_length=128)
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+    set_password_form_class = SetPasswordForm
+
+    def custom_validation(self, attrs):
+        pass
+
+    def validate(self, attrs):
+        self._errors = {}
+
+        # Decode the uidb64 to uid to get User object
+        try:
+            uid = force_str(uid_decoder(attrs["uid"]))
+            self.user = CustomUser.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            raise ValidationError(
+                "Token expired. Please request a new password reset link"
+            )
+
+        self.custom_validation(attrs)
+        # Construct SetPasswordForm instance
+        self.set_password_form = self.set_password_form_class(
+            user=self.user, data=attrs
+        )
+        if not self.set_password_form.is_valid():
+            raise serializers.ValidationError(self.set_password_form.errors)
+        if not default_token_generator.check_token(self.user, attrs["token"]):
+            raise ValidationError(
+                "Token expired. Please request a new password reset link"
+            )
+
+        return attrs
+
+    def save(self):
+        return self.set_password_form.save()
