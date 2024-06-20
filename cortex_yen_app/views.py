@@ -307,12 +307,73 @@ class FabricListAPIView(generics.ListAPIView):
 
 
 class FabricDetailAPIView(generics.RetrieveAPIView):
-    queryset = Fabric.objects.all()
     serializer_class = FabricSerializer
 
-    @swagger_auto_schema(responses={200: FabricSerializer()})
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "keyword",
+                openapi.IN_QUERY,
+                description="Search keyword",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "sort_by",
+                openapi.IN_QUERY,
+                description="Sort by 'newest' or 'oldest'",
+                type=openapi.TYPE_STRING,
+                enum=["newest", "oldest"],
+            ),
+            openapi.Parameter(
+                "colors",
+                openapi.IN_QUERY,
+                description="Filter by colors",
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Items(type=openapi.TYPE_STRING),
+            ),
+            openapi.Parameter(
+                "page",
+                openapi.IN_QUERY,
+                description="Page number for pagination",
+                type=openapi.TYPE_INTEGER,
+            ),
+        ],
+        responses={200: FabricSerializer(many=True)},
+    )
+    def get_queryset(self):
+        queryset = Fabric.objects.all()
+        keyword = self.request.GET.get("keyword", "").lower()
+        sort_by = self.request.GET.get("sort_by", "newest")
+        colors = self.request.GET.getlist("colors", [])
+
+        # Apply filters based on keyword
+        if keyword:
+            if "best selling" in keyword:
+                queryset = Fabric.objects.annotate(
+                    num_orders=Count("orderitem")
+                ).order_by("-num_orders")
+            elif "hot selling" in keyword:
+                queryset = queryset.filter(is_hot_selling=True)
+            else:
+                category = ProductCategory.objects.filter(
+                    name__icontains=keyword
+                ).first()
+                if category:
+                    queryset = queryset.filter(product_category=category)
+                else:
+                    queryset = queryset.filter(title__icontains=keyword)
+
+        # Apply sorting
+        if sort_by == "newest":
+            queryset = queryset.order_by("-created_at")
+        elif sort_by == "oldest":
+            queryset = queryset.order_by("created_at")
+
+        # Apply color filters
+        if colors:
+            queryset = queryset.filter(available_colors__overlap=colors)
+
+        return queryset
 
 
 class ToggleFavoriteView(generics.CreateAPIView):
