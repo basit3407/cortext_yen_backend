@@ -15,6 +15,7 @@ from drf_yasg import openapi
 from .models import Blog, CustomUser, Event, Fabric, Favorite, Order, ProductCategory
 from .serializers import (
     BlogSerializer,
+    ContactFormSerializer,
     EventSerializer,
     FabricSerializer,
     FavoriteSerializer,
@@ -34,6 +35,8 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 class GoogleLoginAPIView(APIView):
@@ -520,3 +523,36 @@ class BlogViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(responses={200: BlogSerializer()})
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
+
+
+class ContactFormView(APIView):
+
+    @swagger_auto_schema(
+        request_body=ContactFormSerializer,
+        responses={200: "Contact form submitted successfully", 400: "Invalid input"},
+        operation_description="Submit the contact form",
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = ContactFormSerializer(data=request.data)
+        if serializer.is_valid():
+            # Send email
+            subject = serializer.validated_data["subject"]
+            message = f"""
+            Item Code: {serializer.validated_data['item_code']}
+            Name: {serializer.validated_data['name']}
+            Email: {serializer.validated_data['email']}
+            Phone Number: {serializer.validated_data['phone_number']}
+            Company Name: {serializer.validated_data.get('company_name', '')}
+            Description: {serializer.validated_data.get('description', '')}
+            """
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=["support@corleeandco.com"],
+            )
+            return Response(
+                {"message": "Contact form submitted successfully."},
+                status=status.HTTP_200_OK,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

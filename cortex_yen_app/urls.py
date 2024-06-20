@@ -4,6 +4,7 @@ from rest_framework import routers
 from .views import (
     BestSellingFabricsAPIView,
     BlogViewSet,
+    ContactFormView,
     CustomPasswordResetConfirmView,
     CustomPasswordResetView,
     EmailVerificationView,
@@ -68,4 +69,5 @@ urlpatterns = [
         BestSellingFabricsAPIView.as_view(),
         name="best-selling-fabrics",
     ),
+    path("contact/", ContactFormView.as_view(), name="contact_form"),
 ]

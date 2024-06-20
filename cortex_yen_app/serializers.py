@@ -108,6 +108,16 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         fields = ["id", "name", "description"]
 
 
+class ContactFormSerializer(serializers.Serializer):
+    item_code = serializers.CharField(max_length=100)
+    name = serializers.CharField(max_length=100)
+    subject = serializers.CharField(max_length=100)
+    email = serializers.EmailField()
+    phone_number = serializers.CharField(max_length=20)
+    company_name = serializers.CharField(max_length=100)
+    description = serializers.CharField(max_length=1000)
+
+
 class FabricSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
 
