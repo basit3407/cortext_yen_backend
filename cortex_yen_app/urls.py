@@ -1,8 +1,7 @@
 from django.urls import path, include
-from django.contrib.auth import views as auth_views  # Add this impor
 from rest_framework import routers
 from .views import (
-    BestSellingFabricsAPIView,
+    # BestSellingFabricsAPIView,
     BlogViewSet,
     ContactFormView,
     CustomPasswordResetConfirmView,
@@ -54,10 +53,10 @@ urlpatterns = [
         CustomPasswordResetConfirmView.as_view(),
         name="password_reset_done",
     ),
-    path(
-        "best_selling_fabrics/",
-        BestSellingFabricsAPIView.as_view(),
-        name="best-selling-fabrics",
-    ),
+    # path(
+    #     "best_selling_fabrics/",
+    #     BestSellingFabricsAPIView.as_view(),
+    #     name="best-selling-fabrics",
+    # ),
     path("contact/", ContactFormView.as_view(), name="contact_form"),
 ]

@@ -25,8 +25,6 @@ from .serializers import (
     UserSerializer,
     UserLoginSerializer,
 )
-
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -555,14 +553,14 @@ class ToggleHotSellingView(generics.UpdateAPIView):
         return Response(serializer.data)
 
 
-class BestSellingFabricsAPIView(generics.ListAPIView):
-    serializer_class = FabricSerializer
+# class BestSellingFabricsAPIView(generics.ListAPIView):
+#     serializer_class = FabricSerializer
 
-    @swagger_auto_schema(responses={200: FabricSerializer(many=True)})
-    def get_queryset(self):
-        return Fabric.objects.annotate(num_orders=Count("orderitem")).order_by(
-            "-num_orders"
-        )
+#     @swagger_auto_schema(responses={200: FabricSerializer(many=True)})
+#     def get_queryset(self):
+#         return Fabric.objects.annotate(num_orders=Count("orderitem")).order_by(
+#             "-num_orders"
+#         )
 
 
 class EventViewSet(viewsets.ModelViewSet):
