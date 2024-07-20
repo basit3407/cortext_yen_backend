@@ -6,7 +6,6 @@ from google.auth.transport import requests
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponseRedirect
-from django.utils.http import urlsafe_base64_decode
 from django.db.models import Count
 from drf_yasg.utils import swagger_auto_schema
 from django.contrib.auth import authenticate
