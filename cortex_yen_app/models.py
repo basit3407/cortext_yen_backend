@@ -98,6 +98,7 @@ class Order(models.Model):
     customer_email = models.EmailField()
     order_date = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    request_number = models.CharField(max_length=12, blank=True, unique=True)
 
     def __str__(self):
         return f"Order #{self.id} - {self.customer_name}"
