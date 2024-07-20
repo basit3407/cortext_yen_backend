@@ -669,6 +669,13 @@ class CartItemViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CartItemSerializer
 
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return CartItem.objects.none()
+
+        cart = get_object_or_404(Cart, user=self.request.user)
+        return CartItem.objects.filter(cart=cart)
+
     @swagger_auto_schema(
         responses={200: CartItemSerializer(many=True)}, security=[{"token": []}]
     )
