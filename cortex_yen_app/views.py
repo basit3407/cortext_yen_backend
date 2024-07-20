@@ -511,49 +511,49 @@ class FavoriteFabricsListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class OrderViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = OrderSerializer
-    queryset = Order.objects.all()
+# class OrderViewSet(viewsets.ModelViewSet):
+#     permission_classes = [permissions.IsAuthenticated]
+#     serializer_class = OrderSerializer
+#     queryset = Order.objects.all()
 
-    @swagger_auto_schema(
-        responses={200: OrderSerializer(many=True)}, security=[{"token": []}]
-    )
-    def list(self, request, *args, **kwargs):
-        queryset = self.queryset.filter(customer_email=request.user.email)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+#     @swagger_auto_schema(
+#         responses={200: OrderSerializer(many=True)}, security=[{"token": []}]
+#     )
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.queryset.filter(customer_email=request.user.email)
+#         serializer = self.get_serializer(queryset, many=True)
+#         return Response(serializer.data)
 
-    @swagger_auto_schema(responses={200: OrderSerializer()}, security=[{"token": []}])
-    def retrieve(self, request, *args, **kwargs):
-        queryset = self.queryset.filter(customer_email=request.user.email)
-        order = get_object_or_404(queryset, pk=kwargs["pk"])
-        serializer = self.get_serializer(order)
-        return Response(serializer.data)
+#     @swagger_auto_schema(responses={200: OrderSerializer()}, security=[{"token": []}])
+#     def retrieve(self, request, *args, **kwargs):
+#         queryset = self.queryset.filter(customer_email=request.user.email)
+#         order = get_object_or_404(queryset, pk=kwargs["pk"])
+#         serializer = self.get_serializer(order)
+#         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        request_body=OrderSerializer,
-        responses={201: OrderSerializer()},
-        security=[{"token": []}],
-    )
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(customer_email=request.user.email)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+#     @swagger_auto_schema(
+#         request_body=OrderSerializer,
+#         responses={201: OrderSerializer()},
+#         security=[{"token": []}],
+#     )
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save(customer_email=request.user.email)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @swagger_auto_schema(
-        request_body=OrderSerializer,
-        responses={200: OrderSerializer()},
-        security=[{"token": []}],
-    )
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop("partial", False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+#     @swagger_auto_schema(
+#         request_body=OrderSerializer,
+#         responses={200: OrderSerializer()},
+#         security=[{"token": []}],
+#     )
+#     def update(self, request, *args, **kwargs):
+#         partial = kwargs.pop("partial", False)
+#         instance = self.get_object()
+#         serializer = self.get_serializer(instance, data=request.data, partial=partial)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         return Response(serializer.data)
 
 
 class ToggleHotSellingView(generics.UpdateAPIView):
@@ -635,32 +635,32 @@ class ContactFormView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CartViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = CartSerializer
+# class CartViewSet(viewsets.ModelViewSet):
+#     permission_classes = [permissions.IsAuthenticated]
+#     serializer_class = CartSerializer
 
-    @swagger_auto_schema(
-        responses={200: CartSerializer(many=True)}, security=[{"token": []}]
-    )
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+#     @swagger_auto_schema(
+#         responses={200: CartSerializer(many=True)}, security=[{"token": []}]
+#     )
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.get_serializer(queryset, many=True)
+#         return Response(serializer.data)
 
-    @swagger_auto_schema(responses={200: CartSerializer()}, security=[{"token": []}])
-    def retrieve(self, request, *args, **kwargs):
-        instance = get_object_or_404(Cart, user=request.user)
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+#     @swagger_auto_schema(responses={200: CartSerializer()}, security=[{"token": []}])
+#     def retrieve(self, request, *args, **kwargs):
+#         instance = get_object_or_404(Cart, user=request.user)
+#         serializer = self.get_serializer(instance)
+#         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        responses={201: CartSerializer(), 400: "Invalid input"},
-        security=[{"token": []}],
-    )
-    def create(self, request, *args, **kwargs):
-        instance, created = Cart.objects.get_or_create(user=request.user)
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+#     @swagger_auto_schema(
+#         responses={201: CartSerializer(), 400: "Invalid input"},
+#         security=[{"token": []}],
+#     )
+#     def create(self, request, *args, **kwargs):
+#         instance, created = Cart.objects.get_or_create(user=request.user)
+#         serializer = self.get_serializer(instance)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class CartItemViewSet(viewsets.ModelViewSet):

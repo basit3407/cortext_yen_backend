@@ -4,7 +4,7 @@ from .views import (
     # BestSellingFabricsAPIView,
     BlogViewSet,
     CartItemViewSet,
-    CartViewSet,
+    # CartViewSet,
     ContactFormView,
     CustomPasswordResetConfirmView,
     CustomPasswordResetView,
@@ -14,7 +14,7 @@ from .views import (
     FabricListAPIView,
     FavoriteFabricsListView,
     GoogleLoginAPIView,
-    OrderViewSet,
+    # OrderViewSet,
     ProductCategoryListAPIView,
     ToggleFavoriteView,
     UserRegistrationAPIView,
@@ -23,10 +23,10 @@ from .views import (
 )
 
 router = routers.DefaultRouter()
-router.register(r"orders", OrderViewSet)
+# router.register(r"orders", OrderViewSet)
 router.register(r"events", EventViewSet)
 router.register(r"blogs", BlogViewSet)
-router.register(r"cart", CartViewSet, basename="cart")
+# router.register(r"cart", CartViewSet, basename="cart")
 router.register(r"cart-items", CartItemViewSet, basename="cartitem")
 
 urlpatterns = [
