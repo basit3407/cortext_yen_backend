@@ -19,6 +19,7 @@ from .views import (
     ToggleFavoriteView,
     UserRegistrationAPIView,
     UserLoginAPIView,
+    checkout,
 )
 
 router = routers.DefaultRouter()
@@ -63,4 +64,5 @@ urlpatterns = [
     #     name="best-selling-fabrics",
     # ),
     path("contact/", ContactFormView.as_view(), name="contact_form"),
+    path("checkout/", checkout, name="checkout"),
 ]

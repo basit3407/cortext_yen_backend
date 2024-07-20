@@ -121,6 +121,8 @@ class GoogleLoginAPIView(APIView):
                 user.auth_method = "google"
                 user.is_verified = True
                 user.save()
+                # Create a cart for the new user
+                Cart.objects.create(user=user)
 
             authenticated_user = authenticate(username=user.username, password=None)
 
@@ -182,6 +184,8 @@ class UserRegistrationAPIView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             token = Token.objects.create(user=user)
+            # Create a cart for the new user
+            Cart.objects.create(user=user)
             user_data = UserSerializer(user).data
             return Response(
                 {"token": token.key, "user": user_data},
@@ -232,6 +236,8 @@ class UserLoginAPIView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
             token, _ = Token.objects.get_or_create(user=user)
+            # Create a cart for the new user
+            Cart.objects.create(user=user)
             user_data = UserSerializer(user).data
             return Response(
                 {"token": token.key, "user": user_data},
@@ -647,7 +653,10 @@ class CartViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-    @swagger_auto_schema(responses={201: CartSerializer()}, security=[{"token": []}])
+    @swagger_auto_schema(
+        responses={201: CartSerializer(), 400: "Invalid input"},
+        security=[{"token": []}],
+    )
     def create(self, request, *args, **kwargs):
         instance, created = Cart.objects.get_or_create(user=request.user)
         serializer = self.get_serializer(instance)
@@ -669,7 +678,7 @@ class CartItemViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(
         request_body=CartItemSerializer,
-        responses={201: CartItemSerializer()},
+        responses={201: CartItemSerializer(), 400: "Invalid input"},
         security=[{"token": []}],
     )
     def create(self, request, *args, **kwargs):
@@ -684,3 +693,41 @@ class CartItemViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@swagger_auto_schema(
+    method="post",
+    responses={
+        201: openapi.Response("Order created", OrderSerializer),
+        400: "invalid input",
+    },
+    security=[{"token": []}],
+)
+def checkout(request):
+    cart = get_object_or_404(Cart, user=request.user)
+    cart_items = CartItem.objects.filter(cart=cart)
+
+    if not cart_items.exists():
+        return Response({"detail": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
+
+    order_data = {
+        "customer_name": request.user.name,
+        "customer_email": request.user.email,
+        "items": [],
+    }
+
+    for item in cart_items:
+        order_data["items"].append(
+            {"fabric": item.fabric.id, "color": item.color, "quantity": item.quantity}
+        )
+
+    order_serializer = OrderSerializer(data=order_data)
+    if order_serializer.is_valid():
+        order = order_serializer.save()
+
+        # Clear the cart
+        cart_items.delete()
+
+        return Response(order_serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(order_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
