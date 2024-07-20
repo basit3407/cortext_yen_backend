@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from rest_framework import serializers
 from .models import (
     Blog,
-    Cart,
+    # Cart,
     CartItem,
     CustomUser,
     Event,
@@ -282,10 +282,10 @@ class CartItemSerializer(serializers.ModelSerializer):
         fields = ["id", "fabric", "color", "quantity", "cart"]
 
 
-class CartSerializer(serializers.ModelSerializer):
-    items = CartItemSerializer(many=True, read_only=True)
+# class CartSerializer(serializers.ModelSerializer):
+#     items = CartItemSerializer(many=True, read_only=True)
 
-    class Meta:
-        model = Cart
-        fields = ["id", "user", "items"]
-        read_only_fields = ["user"]
+#     class Meta:
+#         model = Cart
+#         fields = ["id", "user", "items"]
+#         read_only_fields = ["user"]

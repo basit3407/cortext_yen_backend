@@ -9,6 +9,7 @@ from django.http import HttpResponseRedirect
 from django.db.models import Count
 from drf_yasg.utils import swagger_auto_schema
 from django.contrib.auth import authenticate
+from rest_framework.decorators import api_view, permission_classes
 from drf_yasg import openapi
 from .models import (
     Blog,
@@ -24,7 +25,7 @@ from .models import (
 from .serializers import (
     BlogSerializer,
     CartItemSerializer,
-    CartSerializer,
+    # CartSerializer,
     ContactFormSerializer,
     EventSerializer,
     FabricSerializer,
@@ -54,6 +55,7 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from django.contrib.auth.admin import sensitive_post_parameters_m
 from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import IsAuthenticated
 
 
 class GoogleLoginAPIView(APIView):
@@ -703,6 +705,8 @@ class CartItemViewSet(viewsets.ModelViewSet):
     },
     security=[{"token": []}],
 )
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def checkout(request):
     cart = get_object_or_404(Cart, user=request.user)
     cart_items = CartItem.objects.filter(cart=cart)
