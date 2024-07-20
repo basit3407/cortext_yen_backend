@@ -102,6 +102,17 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.id} - {self.customer_name}"
 
+    def save(self, *args, **kwargs):
+        if not self.request_number:
+            self.request_number = self.generate_request_number()
+        super(Order, self).save(*args, **kwargs)
+
+    def generate_request_number(self):
+        random_str = get_random_string(
+            length=5, allowed_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        )
+        return f"{self.id}{random_str}"
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
