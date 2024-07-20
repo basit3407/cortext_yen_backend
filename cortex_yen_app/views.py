@@ -10,9 +10,21 @@ from django.db.models import Count
 from drf_yasg.utils import swagger_auto_schema
 from django.contrib.auth import authenticate
 from drf_yasg import openapi
-from .models import Blog, CustomUser, Event, Fabric, Favorite, Order, ProductCategory
+from .models import (
+    Blog,
+    Cart,
+    CartItem,
+    CustomUser,
+    Event,
+    Fabric,
+    Favorite,
+    Order,
+    ProductCategory,
+)
 from .serializers import (
     BlogSerializer,
+    CartItemSerializer,
+    CartSerializer,
     ContactFormSerializer,
     EventSerializer,
     FabricSerializer,
@@ -615,3 +627,60 @@ class ContactFormView(APIView):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CartViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CartSerializer
+
+    @swagger_auto_schema(
+        responses={200: CartSerializer(many=True)}, security=[{"token": []}]
+    )
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(responses={200: CartSerializer()}, security=[{"token": []}])
+    def retrieve(self, request, *args, **kwargs):
+        instance = get_object_or_404(Cart, user=request.user)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(responses={201: CartSerializer()}, security=[{"token": []}])
+    def create(self, request, *args, **kwargs):
+        instance, created = Cart.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class CartItemViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CartItemSerializer
+
+    @swagger_auto_schema(
+        responses={200: CartItemSerializer(many=True)}, security=[{"token": []}]
+    )
+    def list(self, request, *args, **kwargs):
+        cart = get_object_or_404(Cart, user=request.user)
+        queryset = CartItem.objects.filter(cart=cart)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        request_body=CartItemSerializer,
+        responses={201: CartItemSerializer()},
+        security=[{"token": []}],
+    )
+    def create(self, request, *args, **kwargs):
+        cart = get_object_or_404(Cart, user=request.user)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(cart=cart)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @swagger_auto_schema(responses={204: "No Content"}, security=[{"token": []}])
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)

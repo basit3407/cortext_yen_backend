@@ -104,9 +104,10 @@ class Order(models.Model):
         return f"Order #{self.id} - {self.customer_name}"
 
     def save(self, *args, **kwargs):
+        super(Order, self).save(*args, **kwargs)
         if not self.request_number:
             self.request_number = self.generate_request_number()
-        super(Order, self).save(*args, **kwargs)
+            self.save()
 
     def generate_request_number(self):
         random_str = get_random_string(
@@ -116,7 +117,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     fabric = models.ForeignKey(Fabric, on_delete=models.CASCADE)
     color = models.CharField(max_length=100)
     quantity = models.PositiveIntegerField()
@@ -161,3 +162,22 @@ class Blog(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Cart(models.Model):
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="cart"
+    )
+
+    def __str__(self):
+        return f"Cart of {self.user.username}"
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
+    fabric = models.ForeignKey(Fabric, on_delete=models.CASCADE)
+    color = models.CharField(max_length=100)
+    quantity = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.fabric.title} ({self.color}) - {self.quantity}"

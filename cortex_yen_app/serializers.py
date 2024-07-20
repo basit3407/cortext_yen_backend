@@ -2,6 +2,8 @@ from django.db import IntegrityError
 from rest_framework import serializers
 from .models import (
     Blog,
+    Cart,
+    CartItem,
     CustomUser,
     Event,
     Fabric,
@@ -147,11 +149,15 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    fabric = FabricSerializer()
+    fabric = serializers.PrimaryKeyRelatedField(queryset=Fabric.objects.all())
+    # Exclude the 'order' field as it will be set in the OrderSerializer create method
+    order = serializers.PrimaryKeyRelatedField(
+        queryset=Order.objects.all(), required=False
+    )
 
     class Meta:
         model = OrderItem
-        fields = "__all__"
+        fields = ["id", "fabric", "color", "quantity", "order"]
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -159,7 +165,28 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = "__all__"
+        fields = [
+            "id",
+            "customer_name",
+            "customer_email",
+            "order_date",
+            "created_at",
+            "request_number",
+            "items",
+            "fabrics",
+        ]
+        read_only_fields = ["request_number"]
+
+    def create(self, validated_data):
+        items_data = validated_data.pop("items")
+        order = Order.objects.create(**validated_data)
+        for item_data in items_data:
+            OrderItem.objects.create(order=order, **item_data)
+        # Ensure the request_number is generated after the order has been created
+        if not order.request_number:
+            order.request_number = order.generate_request_number()
+            order.save()
+        return order
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -245,3 +272,20 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
     def save(self):
         return self.set_password_form.save()
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    fabric = serializers.PrimaryKeyRelatedField(queryset=Fabric.objects.all())
+
+    class Meta:
+        model = CartItem
+        fields = ["id", "fabric", "color", "quantity", "cart"]
+
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Cart
+        fields = ["id", "user", "items"]
+        read_only_fields = ["user"]

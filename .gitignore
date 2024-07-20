@@ -26,6 +26,8 @@ share/python-wheels/
 *.egg
 MANIFEST
 cortex_yen/settings/local.py
+staticfiles
+media/corlee/uploads
 
 
 # PyInstaller

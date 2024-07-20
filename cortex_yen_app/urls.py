@@ -3,6 +3,8 @@ from rest_framework import routers
 from .views import (
     # BestSellingFabricsAPIView,
     BlogViewSet,
+    CartItemViewSet,
+    CartViewSet,
     ContactFormView,
     CustomPasswordResetConfirmView,
     CustomPasswordResetView,
@@ -23,6 +25,8 @@ router = routers.DefaultRouter()
 router.register(r"orders", OrderViewSet)
 router.register(r"events", EventViewSet)
 router.register(r"blogs", BlogViewSet)
+router.register(r"cart", CartViewSet, basename="cart")
+router.register(r"cart-items", CartItemViewSet, basename="cartitem")
 
 urlpatterns = [
     path("", include(router.urls)),
