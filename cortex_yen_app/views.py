@@ -541,6 +541,9 @@ class FavoriteFabricsListView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
+    def get_queryset(self):
+        return Favorite.objects.filter(user=self.request.user)
+
 
 # class OrderViewSet(viewsets.ModelViewSet):
 #     permission_classes = [permissions.IsAuthenticated]
