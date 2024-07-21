@@ -442,7 +442,7 @@ class FabricListAPIView(generics.ListAPIView):
                 default=1,
             ),
         ],
-        responses={200: FabricSerializer(many=True)},
+        responses={200: fabric_pagination_schema},
     )
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -537,13 +537,45 @@ class FavoriteFabricsListView(generics.ListAPIView):
     serializer_class = FavoriteSerializer
 
     @swagger_auto_schema(
-        responses={200: FavoriteSerializer(many=True)}, security=[{"token": []}]
+        manual_parameters=[
+            openapi.Parameter(
+                "sort_by",
+                openapi.IN_QUERY,
+                description="Sort by 'newest' or 'oldest'",
+                type=openapi.TYPE_STRING,
+                enum=["newest", "oldest"],
+            ),
+            openapi.Parameter(
+                "colors",
+                openapi.IN_QUERY,
+                description="Filter by colors",
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Items(type=openapi.TYPE_STRING),
+            ),
+        ],
+        responses={200: FavoriteSerializer(many=True)},
+        security=[{"token": []}],
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return Favorite.objects.filter(user=self.request.user)
+        queryset = Favorite.objects.filter(user=self.request.user)
+
+        sort_by = self.request.GET.get("sort_by", "newest")
+        colors = self.request.GET.getlist("colors", [])
+
+        # Apply sorting
+        if sort_by == "newest":
+            queryset = queryset.order_by("-created_at")
+        elif sort_by == "oldest":
+            queryset = queryset.order_by("created_at")
+
+        # Apply color filters
+        if colors:
+            queryset = queryset.filter(available_colors__overlap=colors)
+
+        return queryset
 
 
 # class OrderViewSet(viewsets.ModelViewSet):
