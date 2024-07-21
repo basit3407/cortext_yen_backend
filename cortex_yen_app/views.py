@@ -618,25 +618,38 @@ class ContactFormView(APIView):
         if serializer.is_valid():
             subject = serializer.validated_data["subject"]
             message = serializer.validated_data["description"]
-            contact_request = ContactRequest.objects.create(
-                user=request.user,
-                subject=subject,
-                message=message,
-            )
+            item_code = serializer.validated_data["item_code"]
+            name = serializer.validated_data["name"]
+            email = serializer.validated_data["email"]
+            phone_number = serializer.validated_data["phone_number"]
+            company_name = serializer.validated_data.get("company_name", "")
+
+            # Check if the user is authenticated
+            if request.user.is_authenticated:
+                contact_request = ContactRequest.objects.create(
+                    user=request.user,
+                    subject=subject,
+                    message=message,
+                )
+                if subject in ["product", "product_request"]:
+                    related_fabric_ids = serializer.validated_data.get(
+                        "related_fabric", []
+                    )
+                    contact_request.related_fabric.set(related_fabric_ids)
 
             # Send email
-            subject = serializer.validated_data["subject"]
-            message = f"""
-            Item Code: {serializer.validated_data['item_code']}
-            Name: {serializer.validated_data['name']}
-            Email: {serializer.validated_data['email']}
-            Phone Number: {serializer.validated_data['phone_number']}
-            Company Name: {serializer.validated_data.get('company_name', '')}
-            Description: {serializer.validated_data.get('description', '')}
+            email_subject = f"New {subject} from {name}"
+            email_message = f"""
+            Item Code: {item_code}
+            Name: {name}
+            Email: {email}
+            Phone Number: {phone_number}
+            Company Name: {company_name}
+            Description: {message}
             """
             send_mail(
-                subject=subject,
-                message=message,
+                subject=email_subject,
+                message=email_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=["support@corleeandco.com"],
             )
