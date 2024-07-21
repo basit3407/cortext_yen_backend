@@ -11,6 +11,8 @@ from drf_yasg.utils import swagger_auto_schema
 from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
 from drf_yasg import openapi
+
+from cortex_yen_app.pagination import CustomPagination
 from .models import (
     Blog,
     Cart,
@@ -371,12 +373,39 @@ class CustomPasswordResetConfirmView(GenericAPIView):
 
 class ProductCategoryListAPIView(generics.ListAPIView):
     serializer_class = ProductCategorySerializer
+    pagination_class = CustomPagination
 
     @swagger_auto_schema(responses={200: ProductCategorySerializer(many=True)})
     def get_queryset(self):
         return ProductCategory.objects.annotate(
             total_orders=Count("fabric__order")
         ).order_by("-total_orders")
+
+
+fabric_pagination_schema = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        "count": openapi.Schema(
+            type=openapi.TYPE_INTEGER, description="Total number of fabrics"
+        ),
+        "next": openapi.Schema(
+            type=openapi.TYPE_STRING,
+            format=openapi.FORMAT_URI,
+            description="Link to next page",
+        ),
+        "previous": openapi.Schema(
+            type=openapi.TYPE_STRING,
+            format=openapi.FORMAT_URI,
+            description="Link to previous page",
+        ),
+        "results": openapi.Schema(
+            type=openapi.TYPE_ARRAY,
+            items=openapi.Schema(
+                type=openapi.TYPE_OBJECT, ref="#/components/schemas/Fabric"
+            ),
+        ),
+    },
+)
 
 
 class FabricListAPIView(generics.ListAPIView):

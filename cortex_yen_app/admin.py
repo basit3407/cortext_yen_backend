@@ -2,12 +2,11 @@ from django.contrib import admin
 from .models import (
     Blog,
     CustomUser,
-    # CustomUser,
     Event,
     ProductCategory,
     Fabric,
     Cart,
-    # Favorite,
+    Favorite,
     # Order,
     # OrderItem,
     # MediaUploads,
@@ -39,7 +38,7 @@ admin.site.register(CustomUser)
 admin.site.register(ProductCategory)
 admin.site.register(Fabric)
 admin.site.register(Cart)
-# admin.site.register(Favorite)
+admin.site.register(Favorite)
 # admin.site.register(Order)
 # admin.site.register(OrderItem)
 admin.site.register(Event)
