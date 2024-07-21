@@ -410,6 +410,7 @@ fabric_pagination_schema = openapi.Schema(
 
 class FabricListAPIView(generics.ListAPIView):
     serializer_class = FabricSerializer
+    pagination_class = CustomPagination
 
     @swagger_auto_schema(
         manual_parameters=[
