@@ -560,20 +560,22 @@ class FavoriteFabricsListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        queryset = Favorite.objects.filter(user=self.request.user)
+        queryset = Favorite.objects.filter(user=self.request.user).select_related(
+            "fabric"
+        )
 
         sort_by = self.request.GET.get("sort_by", "newest")
         colors = self.request.GET.getlist("colors", [])
 
-        # Apply sorting
+        # Apply sorting based on fabric attributes
         if sort_by == "newest":
-            queryset = queryset.order_by("-created_at")
+            queryset = queryset.order_by("-fabric__created_at")
         elif sort_by == "oldest":
-            queryset = queryset.order_by("created_at")
+            queryset = queryset.order_by("fabric__created_at")
 
-        # Apply color filters
+        # Apply color filters based on fabric attributes
         if colors:
-            queryset = queryset.filter(available_colors__overlap=colors)
+            queryset = queryset.filter(fabric__available_colors__overlap=colors)
 
         return queryset
 
