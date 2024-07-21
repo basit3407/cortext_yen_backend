@@ -777,22 +777,22 @@ class ContactRequestListCreateAPIView(generics.ListCreateAPIView):
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_description="Create a new contact request for the authenticated user",
-        request_body=ContactRequestSerializer,
-        responses={201: ContactRequestSerializer()},
-        security=[{"token": []}],
-    )
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+    # @swagger_auto_schema(
+    #     operation_description="Create a new contact request for the authenticated user",
+    #     request_body=ContactRequestSerializer,
+    #     responses={201: ContactRequestSerializer()},
+    #     security=[{"token": []}],
+    # )
+    # def post(self, request, *args, **kwargs):
+    #     return super().post(request, *args, **kwargs)
 
     def get_queryset(self):
         return ContactRequest.objects.filter(user=self.request.user).annotate(
             total_orders=Count("related_fabric")
         )
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    # def perform_create(self, serializer):
+    #     serializer.save(user=self.request.user)
 
 
 class ContactRequestDetailAPIView(generics.RetrieveAPIView):
