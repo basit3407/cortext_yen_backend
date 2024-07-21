@@ -765,7 +765,10 @@ def checkout(request):
         return Response(order_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ContactRequestListCreateAPIView(generics.ListCreateAPIView):
+class ContactRequestListCreateAPIView(
+    # generics.ListCreateAPIView
+    generics.ListAPIView
+):
     serializer_class = ContactRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
 
