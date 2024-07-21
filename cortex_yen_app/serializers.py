@@ -4,6 +4,7 @@ from .models import (
     Blog,
     # Cart,
     CartItem,
+    ContactRequest,
     CustomUser,
     Event,
     Fabric,
@@ -289,3 +290,23 @@ class CartItemSerializer(serializers.ModelSerializer):
 #         model = Cart
 #         fields = ["id", "user", "items"]
 #         read_only_fields = ["user"]
+
+
+class ContactRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactRequest
+        fields = [
+            "id",
+            "user",
+            "request_number",
+            "subject",
+            "message",
+            "created_at",
+            "related_fabric",
+        ]
+
+    def create(self, validated_data):
+        fabrics = validated_data.pop("related_fabric", [])
+        contact_request = super().create(validated_data)
+        contact_request.related_fabric.set(fabrics)
+        return contact_request

@@ -6,6 +6,8 @@ from .views import (
     CartItemViewSet,
     # CartViewSet,
     ContactFormView,
+    ContactRequestDetailAPIView,
+    ContactRequestListCreateAPIView,
     CustomPasswordResetConfirmView,
     CustomPasswordResetView,
     EmailVerificationView,
@@ -65,4 +67,14 @@ urlpatterns = [
     # ),
     path("contact/", ContactFormView.as_view(), name="contact_form"),
     path("checkout/", checkout, name="checkout"),
+    path(
+        "contact-requests/",
+        ContactRequestListCreateAPIView.as_view(),
+        name="contact-requests",
+    ),
+    path(
+        "contact-requests/<int:pk>/",
+        ContactRequestDetailAPIView.as_view(),
+        name="contact-request-detail",
+    ),
 ]

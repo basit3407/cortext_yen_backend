@@ -181,3 +181,34 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.fabric.title} ({self.color}) - {self.quantity}"
+
+
+class ContactRequest(models.Model):
+    REQUEST_TYPE_CHOICES = [
+        ("general", "General Inquiry"),
+        ("product", "Product Inquiry"),
+        ("custom", "Customization Inquiry"),
+        ("order", "Order Inquiry"),
+        ("product_request", "Product Request"),
+    ]
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    request_number = models.CharField(max_length=12, unique=True, blank=True)
+    subject = models.CharField(max_length=255, choices=REQUEST_TYPE_CHOICES)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    related_fabric = models.ManyToManyField(Fabric, blank=True)
+
+    def __str__(self):
+        return f"Request {self.request_number} by {self.user.username}"
+
+    def save(self, *args, **kwargs):
+        if not self.request_number:
+            self.request_number = self.generate_request_number()
+        super(ContactRequest, self).save(*args, **kwargs)
+
+    def generate_request_number(self):
+        random_str = get_random_string(
+            length=5, allowed_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        )
+        return f"{self.id}{random_str}"
