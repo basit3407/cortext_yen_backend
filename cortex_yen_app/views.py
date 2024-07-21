@@ -240,8 +240,6 @@ class UserLoginAPIView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
             token, _ = Token.objects.get_or_create(user=user)
-            # Create a cart for the new user
-            Cart.objects.create(user=user)
             user_data = UserSerializer(user).data
             return Response(
                 {"token": token.key, "user": user_data},
@@ -622,7 +620,7 @@ class ContactFormView(APIView):
             name = serializer.validated_data["name"]
             email = serializer.validated_data["email"]
             phone_number = serializer.validated_data["phone_number"]
-            company_name = serializer.validated_data.get("company_name", "")
+            company_name = serializer.validated_data["company_name"]
 
             # Check if the user is authenticated
             if request.user.is_authenticated:
@@ -630,12 +628,14 @@ class ContactFormView(APIView):
                     user=request.user,
                     subject=subject,
                     message=message,
+                    company_name=company_name,
                 )
-                if subject in ["product", "product_request"]:
-                    related_fabric_ids = serializer.validated_data.get(
-                        "related_fabric", []
-                    )
-                    contact_request.related_fabric.set(related_fabric_ids)
+                if subject == "product":
+                    try:
+                        fabric = Fabric.objects.get(item_code=item_code)
+                        contact_request.related_fabric.add(fabric)
+                    except Fabric.DoesNotExist:
+                        pass  # Handle the case where the fabric is not found
 
             # Send email
             email_subject = f"New {subject} from {name}"
@@ -737,6 +737,16 @@ class CartItemViewSet(viewsets.ModelViewSet):
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@swagger_auto_schema(
+    method="post",
+    responses={
+        201: openapi.Response("Order created", OrderSerializer),
+        400: "Invalid input",
+    },
+    security=[{"token": []}],
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def checkout(request):
     cart = get_object_or_404(Cart, user=request.user)
     cart_items = CartItem.objects.filter(cart=cart)
@@ -767,6 +777,7 @@ def checkout(request):
             user=request.user,
             subject="product_request",
             message="Product request generated from checkout",
+            company_name=request.user.company_name,
         )
         contact_request.related_fabric.set(fabric_list)
 

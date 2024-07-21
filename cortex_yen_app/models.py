@@ -190,6 +190,7 @@ class ContactRequest(models.Model):
         ("custom", "Customization Inquiry"),
         ("order", "Order Inquiry"),
         ("product_request", "Product Request"),
+        ("other", "Other"),
     ]
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -198,6 +199,7 @@ class ContactRequest(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     related_fabric = models.ManyToManyField(Fabric, blank=True)
+    company_name = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return f"Request {self.request_number} by {self.user.username}"

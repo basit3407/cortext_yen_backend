@@ -119,7 +119,7 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 class ContactFormSerializer(serializers.Serializer):
     item_code = serializers.CharField(max_length=100)
     name = serializers.CharField(max_length=100)
-    subject = serializers.CharField(max_length=100)
+    subject = serializers.ChoiceField(choices=ContactRequest.REQUEST_TYPE_CHOICES)
     email = serializers.EmailField()
     phone_number = serializers.CharField(max_length=20)
     company_name = serializers.CharField(max_length=100)
@@ -303,6 +303,7 @@ class ContactRequestSerializer(serializers.ModelSerializer):
             "message",
             "created_at",
             "related_fabric",
+            "company_name",
         ]
 
     def create(self, validated_data):
