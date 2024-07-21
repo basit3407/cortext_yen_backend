@@ -737,16 +737,6 @@ class CartItemViewSet(viewsets.ModelViewSet):
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-@swagger_auto_schema(
-    method="post",
-    responses={
-        201: openapi.Response("Order created", OrderSerializer),
-        400: "Invalid input",
-    },
-    security=[{"token": []}],
-)
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
 def checkout(request):
     cart = get_object_or_404(Cart, user=request.user)
     cart_items = CartItem.objects.filter(cart=cart)

@@ -293,6 +293,8 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class ContactRequestSerializer(serializers.ModelSerializer):
+    related_fabric_details = serializers.SerializerMethodField()
+
     class Meta:
         model = ContactRequest
         fields = [
@@ -302,9 +304,15 @@ class ContactRequestSerializer(serializers.ModelSerializer):
             "subject",
             "message",
             "created_at",
-            "related_fabric",
             "company_name",
+            "related_fabric_details",
         ]
+
+    def get_related_fabric_details(self, obj):
+        if obj.subject in ["product", "product_request"]:
+            fabrics = obj.related_fabric.all()
+            return FabricSerializer(fabrics, many=True).data
+        return []
 
     def create(self, validated_data):
         fabrics = validated_data.pop("related_fabric", [])
