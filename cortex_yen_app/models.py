@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
 from django.utils.crypto import get_random_string
+from .validators import validate_colors
 
 
 class MediaUploads(models.Model):
@@ -71,7 +72,10 @@ class Fabric(models.Model):
     weight = models.CharField(max_length=100)
     finish = models.CharField(max_length=100)
     available_colors = ArrayField(
-        models.CharField(max_length=50), blank=True, default=list
+        models.CharField(max_length=50),
+        blank=True,
+        default=list,
+        validators=[validate_colors],
     )
     item_code = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
