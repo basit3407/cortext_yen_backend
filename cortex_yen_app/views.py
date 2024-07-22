@@ -6,7 +6,7 @@ from google.auth.transport import requests
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponseRedirect
-from django.db.models import Count
+from django.db.models import Count, Q
 from drf_yasg.utils import swagger_auto_schema
 from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
@@ -483,9 +483,12 @@ class FabricListAPIView(generics.ListAPIView):
         elif sort_by == "oldest":
             queryset = queryset.order_by("created_at")
 
-        # Apply color filters
+        # Apply color filters with OR condition
         if colors:
-            queryset = queryset.filter(available_colors__overlap=colors)
+            color_query = Q()
+            for color in colors:
+                color_query |= Q(available_colors__contains=[color])
+            queryset = queryset.filter(color_query)
 
         return queryset
 
