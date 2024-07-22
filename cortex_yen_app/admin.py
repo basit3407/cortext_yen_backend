@@ -9,7 +9,7 @@ from .models import (
     Favorite,
     # Order,
     # OrderItem,
-    # MediaUploads,
+    MediaUploads,
     # Order,
     # OrderItem,
 )
@@ -43,4 +43,4 @@ admin.site.register(Favorite)
 # admin.site.register(OrderItem)
 admin.site.register(Event)
 admin.site.register(Blog)
-# admin.site.register(MediaUploads)
+admin.site.register(MediaUploads)

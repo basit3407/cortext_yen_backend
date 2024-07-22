@@ -128,6 +128,7 @@ class ContactFormSerializer(serializers.Serializer):
 
 class FabricSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
+    is_favorite = serializers.SerializerMethodField()
 
     class Meta:
         model = Fabric
@@ -139,6 +140,12 @@ class FabricSerializer(serializers.ModelSerializer):
         if obj.photo and obj.photo.file:
             return obj.photo.file.url
         return None
+
+    def get_is_favorite(self, obj):
+        user = self.context.get("request").user
+        if user.is_authenticated:
+            return Favorite.objects.filter(user=user, fabric=obj).exists()
+        return False
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
