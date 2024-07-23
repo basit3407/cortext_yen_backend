@@ -128,18 +128,21 @@ class ContactFormSerializer(serializers.Serializer):
 
 class FabricSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
+    auxiliary_photos_urls = serializers.SerializerMethodField()
     is_favorite = serializers.SerializerMethodField()
 
     class Meta:
         model = Fabric
-        extra_fields = ["photo_url"]
-        # Include all fields except the 'photo' field explicitly
-        exclude = ["photo"]
+        extra_fields = ["photo_url", "auxiliary_photos_urls"]
+        exclude = ["photo", "auxiliary_photos"]
 
     def get_photo_url(self, obj):
         if obj.photo and obj.photo.file:
             return obj.photo.file.url
         return None
+
+    def get_auxiliary_photos_urls(self, obj):
+        return [photo.file.url for photo in obj.auxiliary_photos.all()]
 
     def get_is_favorite(self, obj):
         user = self.context.get("request").user
