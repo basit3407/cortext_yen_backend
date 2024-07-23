@@ -359,6 +359,15 @@ class CartItemSerializer(serializers.ModelSerializer):
         model = CartItem
         fields = ["id", "fabric", "color", "quantity", "cart"]
 
+    def __init__(self, *args, **kwargs):
+        super(CartItemSerializer, self).__init__(*args, **kwargs)
+        self.fields["cart"].required = False
+
+    def to_internal_value(self, data):
+        # Remove cart from the validated data if present
+        data.pop("cart", None)
+        return super(CartItemSerializer, self).to_internal_value(data)
+
 
 # class CartSerializer(serializers.ModelSerializer):
 #     items = CartItemSerializer(many=True, read_only=True)
