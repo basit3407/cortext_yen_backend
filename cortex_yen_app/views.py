@@ -462,11 +462,11 @@ class FabricListAPIView(generics.ListAPIView):
 
         # Apply filters based on keyword
         if keyword:
-            if "best selling" in keyword:
+            if "best_selling" in keyword:
                 queryset = Fabric.objects.annotate(
                     num_orders=Count("orderitem")
                 ).order_by("-num_orders")
-            elif "hot selling" in keyword:
+            elif "hot_selling" in keyword:
                 queryset = queryset.filter(is_hot_selling=True)
             else:
                 category = ProductCategory.objects.filter(
