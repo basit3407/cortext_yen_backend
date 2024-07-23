@@ -126,29 +126,96 @@ class ContactFormSerializer(serializers.Serializer):
     description = serializers.CharField(max_length=1000)
 
 
-class FabricSerializer(serializers.ModelSerializer):
+class FabricListSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
-    auxiliary_photos_urls = serializers.SerializerMethodField()
-    is_favorite = serializers.SerializerMethodField()
+    product_category = serializers.CharField(source="product_category.name")
 
     class Meta:
         model = Fabric
-        extra_fields = ["photo_url", "auxiliary_photos_urls"]
-        exclude = ["photo", "auxiliary_photos"]
+        fields = ["id", "item_code", "product_category", "finish", "photo_url"]
 
     def get_photo_url(self, obj):
         if obj.photo and obj.photo.file:
             return obj.photo.file.url
         return None
 
-    def get_auxiliary_photos_urls(self, obj):
-        return [photo.file.url for photo in obj.auxiliary_photos.all()]
+
+class FabricSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
+    aux_photo1_url = serializers.SerializerMethodField()
+    aux_photo2_url = serializers.SerializerMethodField()
+    aux_photo3_url = serializers.SerializerMethodField()
+    is_favorite = serializers.SerializerMethodField()
+    related_fabrics = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Fabric
+        extra_fields = [
+            "photo_url",
+            "aux_photo1_url",
+            "aux_photo2_url",
+            "aux_photo3_url",
+        ]
+        # Include all fields except the 'photo' fields explicitly
+        exclude = ["photo", "aux_photo1", "aux_photo2", "aux_photo3"]
+
+    def get_photo_url(self, obj):
+        if obj.photo and obj.photo.file:
+            return obj.photo.file.url
+        return None
+
+    def get_aux_photo1_url(self, obj):
+        if obj.aux_photo1 and obj.aux_photo1.file:
+            return obj.aux_photo1.file.url
+        return None
+
+    def get_aux_photo2_url(self, obj):
+        if obj.aux_photo2 and obj.aux_photo2.file:
+            return obj.aux_photo2.file.url
+        return None
+
+    def get_aux_photo3_url(self, obj):
+        if obj.aux_photo3 and obj.aux_photo3.file:
+            return obj.aux_photo3.file.url
+        return None
 
     def get_is_favorite(self, obj):
         user = self.context.get("request").user
         if user.is_authenticated:
             return Favorite.objects.filter(user=user, fabric=obj).exists()
         return False
+
+    def get_related_fabrics(self, obj):
+        user = self.context.get("request").user
+        related_fabrics = []
+
+        if user.is_authenticated:
+            favorite_fabrics = Favorite.objects.filter(user=user).values_list(
+                "fabric", flat=True
+            )
+            similar_to_favorites = (
+                Fabric.objects.filter(
+                    product_category__in=Fabric.objects.filter(
+                        id__in=favorite_fabrics
+                    ).values("product_category")
+                )
+                .exclude(id__in=favorite_fabrics)
+                .distinct()
+            )
+            related_fabrics = list(similar_to_favorites[:8])
+
+        if len(related_fabrics) < 8:
+            remaining_slots = 8 - len(related_fabrics)
+            similar_to_current = (
+                Fabric.objects.filter(product_category=obj.product_category)
+                .exclude(id=obj.id)
+                .exclude(id__in=[fabric.id for fabric in related_fabrics])[
+                    :remaining_slots
+                ]
+            )
+            related_fabrics.extend(similar_to_current)
+
+        return FabricListSerializer(related_fabrics[:8], many=True).data
 
 
 class FavoriteSerializer(serializers.ModelSerializer):

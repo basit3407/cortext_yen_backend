@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
-from django.core.exceptions import ValidationError
 from django.utils.crypto import get_random_string
 from .validators import validate_colors
 
@@ -67,9 +66,25 @@ class Fabric(models.Model):
         null=True,
         blank=True,
     )
-    auxiliary_photos = models.ManyToManyField(
+    aux_photo1 = models.ForeignKey(
         MediaUploads,
-        related_name="auxiliary_photos",
+        on_delete=models.DO_NOTHING,
+        related_name="aux_photo1",
+        null=True,
+        blank=True,
+    )
+    aux_photo2 = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="aux_photo2",
+        null=True,
+        blank=True,
+    )
+    aux_photo3 = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="aux_photo3",
+        null=True,
         blank=True,
     )
 
@@ -87,10 +102,6 @@ class Fabric(models.Model):
     item_code = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     is_hot_selling = models.BooleanField(default=False)
-
-    def clean(self):
-        if self.auxiliary_photos.count() != 3:
-            raise ValidationError("Exactly three auxiliary photos are required.")
 
     def __str__(self):
         return self.title
