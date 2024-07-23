@@ -354,10 +354,11 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
 class CartItemSerializer(serializers.ModelSerializer):
     fabric = serializers.PrimaryKeyRelatedField(queryset=Fabric.objects.all())
+    user = UserSerializer(source="cart.user", read_only=True)
 
     class Meta:
         model = CartItem
-        fields = ["id", "fabric", "color", "quantity", "cart"]
+        fields = ["id", "fabric", "color", "quantity", "cart", "user"]
 
     def __init__(self, *args, **kwargs):
         super(CartItemSerializer, self).__init__(*args, **kwargs)

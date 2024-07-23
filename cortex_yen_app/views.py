@@ -785,10 +785,23 @@ class CartItemViewSet(viewsets.ModelViewSet):
     )
     def create(self, request, *args, **kwargs):
         cart = get_object_or_404(Cart, user=request.user)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(cart=cart)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        fabric = request.data.get("fabric")
+        color = request.data.get("color")
+
+        existing_item = CartItem.objects.filter(
+            cart=cart, fabric=fabric, color=color
+        ).first()
+
+        if existing_item:
+            existing_item.quantity += int(request.data.get("quantity", 1))
+            existing_item.save()
+            serializer = self.get_serializer(existing_item)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(cart=cart)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(responses={204: "No Content"}, security=[{"token": []}])
     def destroy(self, request, *args, **kwargs):
