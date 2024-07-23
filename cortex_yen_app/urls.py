@@ -21,6 +21,7 @@ from .views import (
     ToggleFavoriteView,
     UserRegistrationAPIView,
     UserLoginAPIView,
+    UserUpdateAPIView,
     checkout,
 )
 
@@ -77,4 +78,5 @@ urlpatterns = [
         ContactRequestDetailAPIView.as_view(),
         name="contact-request-detail",
     ),
+    path("edit/", UserUpdateAPIView.as_view(), name="user-update"),
 ]

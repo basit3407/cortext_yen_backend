@@ -75,6 +75,11 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
+    def validate(self, data):
+        if data.get("auth_method") == "email" and not data.get("company_name"):
+            raise serializers.ValidationError("Company name is required")
+        return data
+
     def send_verification_email(self, user):
         verification_token = user.generate_verification_token()
         from_email = settings.DEFAULT_FROM_EMAIL
@@ -108,6 +113,19 @@ class UserLoginSerializer(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = [
+            "name",
+            "company_name",
+            "address",
+            "phone",
+            "mobile_phone",
+            "photo",
+        ]
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):

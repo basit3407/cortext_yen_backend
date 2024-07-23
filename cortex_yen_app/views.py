@@ -40,6 +40,7 @@ from .serializers import (
     ProductCategorySerializer,
     UserSerializer,
     UserLoginSerializer,
+    UserUpdateSerializer,
 )
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -119,11 +120,13 @@ class GoogleLoginAPIView(APIView):
                 id_token_value, requests.Request(), CLIENT_ID
             )
             email = decoded_token["email"]
+            name = decoded_token.get("name", "")
 
             try:
                 user = CustomUser.objects.get(email=email)
             except CustomUser.DoesNotExist:
                 user = CustomUser.objects.create_user(email=email, username=email)
+                user.name = name
                 user.auth_method = "google"
                 user.is_verified = True
                 user.save()
@@ -909,3 +912,23 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return ContactRequest.objects.filter(user=self.request.user)
+
+
+class UserUpdateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=UserUpdateSerializer,
+        responses={
+            200: UserUpdateSerializer,
+            400: "Invalid data",
+            401: "Unauthorized",
+        },
+    )
+    def patch(self, request):
+        user = request.user
+        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
