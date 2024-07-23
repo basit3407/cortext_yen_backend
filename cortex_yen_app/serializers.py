@@ -147,17 +147,17 @@ class FabricSerializer(serializers.ModelSerializer):
     aux_photo3_url = serializers.SerializerMethodField()
     is_favorite = serializers.SerializerMethodField()
     related_fabrics = serializers.SerializerMethodField()
+    product_category_name = serializers.CharField(source="product_category.name")
 
     class Meta:
         model = Fabric
-        extra_fields = [
-            "photo_url",
-            "aux_photo1_url",
-            "aux_photo2_url",
-            "aux_photo3_url",
+        exclude = [
+            "photo",
+            "aux_photo1",
+            "aux_photo2",
+            "aux_photo3",
+            "product_category",
         ]
-        # Include all fields except the 'photo' fields explicitly
-        exclude = ["photo", "aux_photo1", "aux_photo2", "aux_photo3"]
 
     def get_photo_url(self, obj):
         if obj.photo and obj.photo.file:
