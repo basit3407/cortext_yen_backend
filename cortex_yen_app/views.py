@@ -776,10 +776,19 @@ class CartItemViewSet(viewsets.ModelViewSet):
         responses={200: CartItemSerializer(many=True)}, security=[{"token": []}]
     )
     def list(self, request, *args, **kwargs):
-        cart = get_object_or_404(Cart, user=request.user)
-        queryset = CartItem.objects.filter(cart=cart)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        user = request.user
+        print(user)
+        cart = get_object_or_404(Cart, user=user)
+        cart_items = CartItem.objects.filter(cart=cart)
+
+        user_data = UserSerializer(user).data
+        cart_items_data = CartItemSerializer(
+            cart_items, many=True, context={"request": request}
+        ).data
+
+        response_data = {"user": user_data, "cart_items": cart_items_data}
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=CartItemSerializer,
@@ -788,11 +797,11 @@ class CartItemViewSet(viewsets.ModelViewSet):
     )
     def create(self, request, *args, **kwargs):
         cart = get_object_or_404(Cart, user=request.user)
-        fabric = request.data.get("fabric")
+        fabric_id = request.data.get("fabric_id")
         color = request.data.get("color")
 
         existing_item = CartItem.objects.filter(
-            cart=cart, fabric=fabric, color=color
+            cart=cart, fabric_id=fabric_id, color=color
         ).first()
 
         if existing_item:

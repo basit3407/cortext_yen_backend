@@ -375,11 +375,10 @@ class CartItemSerializer(serializers.ModelSerializer):
         queryset=Fabric.objects.all(), write_only=True, source="fabric"
     )
     fabric = FabricSerializer(read_only=True)
-    user = UserSerializer(source="cart.user", read_only=True)
 
     class Meta:
         model = CartItem
-        fields = ["id", "fabric", "color", "quantity", "cart", "user", "fabric_id"]
+        fields = ["id", "fabric", "color", "quantity", "cart", "fabric_id"]
 
     def __init__(self, *args, **kwargs):
         super(CartItemSerializer, self).__init__(*args, **kwargs)
