@@ -657,6 +657,7 @@ class ToggleHotSellingView(generics.UpdateAPIView):
 
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
+    pagination_class = CustomPagination
     serializer_class = EventSerializer
 
     @swagger_auto_schema(responses={200: EventSerializer(many=True)})
