@@ -697,6 +697,16 @@ class ContactFormView(APIView):
             phone_number = validated_data["phone_number"]
             company_name = validated_data["company_name"]
 
+            fabric = None
+            if subject == "product" and item_code:
+                try:
+                    fabric = Fabric.objects.get(item_code=item_code)
+                except Fabric.DoesNotExist:
+                    return Response(
+                        {"error": "Fabric with the given item code not found."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
             if request.user.is_authenticated:
                 contact_request = ContactRequest.objects.create(
                     user=request.user,
@@ -704,16 +714,8 @@ class ContactFormView(APIView):
                     message=message,
                     company_name=company_name,
                 )
-                if subject == "product" and item_code:
-                    try:
-                        fabric = Fabric.objects.get(item_code=item_code)
-                        contact_request.related_fabric.add(fabric)
-                    except Fabric.DoesNotExist:
-                        # Handle the case where the fabric is not found
-                        return Response(
-                            {"error": "Fabric with the given item code not found."},
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
+                if fabric:
+                    contact_request.related_fabric.add(fabric)
 
             # Send email
             email_subject = f"New {subject} from {name}"
