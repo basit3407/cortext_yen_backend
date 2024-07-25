@@ -135,7 +135,7 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 
 class ContactFormSerializer(serializers.Serializer):
-    item_code = serializers.CharField(max_length=100)
+    item_code = serializers.CharField(max_length=100, required=False, allow_blank=True)
     name = serializers.CharField(max_length=100)
     subject = serializers.ChoiceField(choices=ContactRequest.REQUEST_TYPE_CHOICES)
     email = serializers.EmailField()
