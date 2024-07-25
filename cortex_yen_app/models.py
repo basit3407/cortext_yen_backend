@@ -219,13 +219,17 @@ class ContactRequest(models.Model):
         ("other", "Other"),
     ]
 
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, null=True, blank=True
+    )
     request_number = models.CharField(max_length=12, unique=True, blank=True)
     subject = models.CharField(max_length=255, choices=REQUEST_TYPE_CHOICES)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     related_fabric = models.ManyToManyField(Fabric, blank=True)
     company_name = models.CharField(max_length=255, blank=True)
+    email = models.EmailField(blank=True, null=True)
+    sample_requested = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Request {self.request_number} by {self.user.username}"

@@ -142,6 +142,7 @@ class ContactFormSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=20)
     company_name = serializers.CharField(max_length=100)
     description = serializers.CharField(max_length=1000)
+    sample_requested = serializers.BooleanField(default=False)
 
     def validate(self, data):
         subject = data.get("subject")

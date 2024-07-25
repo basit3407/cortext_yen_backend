@@ -696,6 +696,7 @@ class ContactFormView(APIView):
             email = validated_data["email"]
             phone_number = validated_data["phone_number"]
             company_name = validated_data["company_name"]
+            sample_requested = validated_data["sample_requested"]
 
             fabric = None
             if item_code:
@@ -707,15 +708,17 @@ class ContactFormView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-            if request.user.is_authenticated:
-                contact_request = ContactRequest.objects.create(
-                    user=request.user,
-                    subject=subject,
-                    message=message,
-                    company_name=company_name,
-                )
-                if subject == "product":
-                    contact_request.related_fabric.add(fabric)
+            contact_request = ContactRequest.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                email=email if not request.user.is_authenticated else None,
+                subject=subject,
+                message=message,
+                company_name=company_name,
+                sample_requested=sample_requested,
+            )
+
+            if subject == "product":
+                contact_request.related_fabric.add(fabric)
 
             # Send email
             email_subject = f"New {subject} from {name}"
@@ -725,6 +728,7 @@ class ContactFormView(APIView):
             Email: {email}
             Phone Number: {phone_number}
             Company Name: {company_name}
+            Sample Requested: {"Yes" if sample_requested else "No"}
             Description: {message}
             """
 
@@ -742,7 +746,10 @@ class ContactFormView(APIView):
                 )
 
             return Response(
-                {"message": "Contact form submitted successfully."},
+                {
+                    "message": "Contact form submitted successfully.",
+                    "request_number": contact_request.request_number,
+                },
                 status=status.HTTP_200_OK,
             )
 
