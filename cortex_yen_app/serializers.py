@@ -147,7 +147,7 @@ class ContactFormSerializer(serializers.Serializer):
         subject = data.get("subject")
         item_code = data.get("item_code")
 
-        if subject in ["product", "product_request"] and not item_code:
+        if subject == "product" and not item_code:
             raise serializers.ValidationError(
                 {
                     "item_code": "Item code is required for product and product request inquiries."

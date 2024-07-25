@@ -698,7 +698,7 @@ class ContactFormView(APIView):
             company_name = validated_data["company_name"]
 
             fabric = None
-            if subject == "product" and item_code:
+            if item_code:
                 try:
                     fabric = Fabric.objects.get(item_code=item_code)
                 except Fabric.DoesNotExist:
@@ -714,7 +714,7 @@ class ContactFormView(APIView):
                     message=message,
                     company_name=company_name,
                 )
-                if fabric:
+                if subject == "product":
                     contact_request.related_fabric.add(fabric)
 
             # Send email
