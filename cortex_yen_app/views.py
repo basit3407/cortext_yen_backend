@@ -688,15 +688,15 @@ class ContactFormView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = ContactFormSerializer(data=request.data)
         if serializer.is_valid():
-            subject = serializer.validated_data["subject"]
-            message = serializer.validated_data["description"]
-            item_code = serializer.validated_data["item_code"]
-            name = serializer.validated_data["name"]
-            email = serializer.validated_data["email"]
-            phone_number = serializer.validated_data["phone_number"]
-            company_name = serializer.validated_data["company_name"]
+            validated_data = serializer.validated_data
+            subject = validated_data["subject"]
+            message = validated_data["description"]
+            item_code = validated_data.get("item_code", "")
+            name = validated_data["name"]
+            email = validated_data["email"]
+            phone_number = validated_data["phone_number"]
+            company_name = validated_data["company_name"]
 
-            # Check if the user is authenticated
             if request.user.is_authenticated:
                 contact_request = ContactRequest.objects.create(
                     user=request.user,
@@ -704,33 +704,46 @@ class ContactFormView(APIView):
                     message=message,
                     company_name=company_name,
                 )
-                if subject == "product":
+                if subject == "product" and item_code:
                     try:
                         fabric = Fabric.objects.get(item_code=item_code)
                         contact_request.related_fabric.add(fabric)
                     except Fabric.DoesNotExist:
-                        pass  # Handle the case where the fabric is not found
+                        # Handle the case where the fabric is not found
+                        return Response(
+                            {"error": "Fabric with the given item code not found."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
             # Send email
             email_subject = f"New {subject} from {name}"
             email_message = f"""
-            Item Code: {item_code}
+            Item Code: {item_code or 'N/A'}
             Name: {name}
             Email: {email}
             Phone Number: {phone_number}
             Company Name: {company_name}
             Description: {message}
             """
-            send_mail(
-                subject=email_subject,
-                message=email_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=["support@corleeandco.com"],
-            )
+
+            try:
+                send_mail(
+                    subject=email_subject,
+                    message=email_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=["support@corleeandco.com"],
+                )
+            except Exception as e:
+                return Response(
+                    {"error": "Failed to send email. Please try again later."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
             return Response(
                 {"message": "Contact form submitted successfully."},
                 status=status.HTTP_200_OK,
             )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

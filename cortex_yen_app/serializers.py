@@ -143,6 +143,19 @@ class ContactFormSerializer(serializers.Serializer):
     company_name = serializers.CharField(max_length=100)
     description = serializers.CharField(max_length=1000)
 
+    def validate(self, data):
+        subject = data.get("subject")
+        item_code = data.get("item_code")
+
+        if subject in ["product", "product_request"] and not item_code:
+            raise serializers.ValidationError(
+                {
+                    "item_code": "Item code is required for product and product request inquiries."
+                }
+            )
+
+        return data
+
 
 class FabricListSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
