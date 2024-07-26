@@ -10,6 +10,7 @@ from .models import (
     Order,
     OrderItem,
     MediaUploads,
+    ContactRequest,
 )
 
 
@@ -42,3 +43,4 @@ admin.site.register(Favorite)
 admin.site.register(Event)
 admin.site.register(Blog)
 admin.site.register(MediaUploads)
+admin.site.register(ContactRequest)
