@@ -120,19 +120,11 @@ class Favorite(models.Model):
 
 class Order(models.Model):
     fabrics = models.ManyToManyField(Fabric, through="OrderItem")
-    customer_name = models.CharField(max_length=255)
-    customer_email = models.EmailField()
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     order_date = models.DateTimeField(auto_now_add=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Order #{self.id} - {self.customer_name}"
-
-    def save(self, *args, **kwargs):
-        super(Order, self).save(*args, **kwargs)
-        if not self.request_number:
-            self.request_number = self.generate_request_number()
-            self.save()
+        return f"Order #{self.id} - {self.user.name}"
 
 
 class OrderItem(models.Model):

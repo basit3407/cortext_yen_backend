@@ -251,43 +251,28 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    fabric = serializers.PrimaryKeyRelatedField(queryset=Fabric.objects.all())
-    # Exclude the 'order' field as it will be set in the OrderSerializer create method
-    order = serializers.PrimaryKeyRelatedField(
-        queryset=Order.objects.all(), required=False
-    )
+    fabric = FabricSerializer()  # Nest the FabricSerializer
 
     class Meta:
         model = OrderItem
-        fields = ["id", "fabric", "color", "quantity", "order"]
+        fields = ["id", "fabric", "color", "quantity"]
 
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
+    user = UserUpdateSerializer()  # Include user data
 
     class Meta:
         model = Order
-        fields = [
-            "id",
-            "customer_name",
-            "customer_email",
-            "order_date",
-            "created_at",
-            "request_number",
-            "items",
-            "fabrics",
-        ]
-        read_only_fields = ["request_number"]
+        fields = ["user", "order_date", "items"]
 
     def create(self, validated_data):
         items_data = validated_data.pop("items")
-        order = Order.objects.create(**validated_data)
+        user = validated_data.pop("user")
+        user_instance = CustomUser.objects.get(id=user.id)
+        order = Order.objects.create(user=user_instance, **validated_data)
         for item_data in items_data:
             OrderItem.objects.create(order=order, **item_data)
-        # Ensure the request_number is generated after the order has been created
-        if not order.request_number:
-            order.request_number = order.generate_request_number()
-            order.save()
         return order
 
 

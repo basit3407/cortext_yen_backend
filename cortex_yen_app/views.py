@@ -862,8 +862,7 @@ def checkout(request):
         return Response({"detail": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
 
     order_data = {
-        "customer_name": request.user.name,
-        "customer_email": request.user.email,
+        "user": request.user,
         "items": [],
     }
 
@@ -879,7 +878,8 @@ def checkout(request):
         # Create a ContactRequest for the product request
         contact_request = ContactRequest.objects.create(
             user=request.user,
-            subject="product_request",
+            request_type="product_request",
+            subject="Product request generated from checkout",
             message="Product request generated from checkout",
             company_name=request.user.company_name,
             related_order=order,
