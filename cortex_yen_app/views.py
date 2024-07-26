@@ -718,7 +718,7 @@ class ContactFormView(APIView):
             )
 
             if subject == "product":
-                contact_request.related_fabric.add(fabric)
+                contact_request.related_fabric = fabric
 
             # Send email
             email_subject = f"New {subject} from {name}"
@@ -867,13 +867,10 @@ def checkout(request):
         "items": [],
     }
 
-    fabric_list = []
-
     for item in cart_items:
         order_data["items"].append(
             {"fabric": item.fabric.id, "color": item.color, "quantity": item.quantity}
         )
-        fabric_list.append(item.fabric)
 
     order_serializer = OrderSerializer(data=order_data)
     if order_serializer.is_valid():
@@ -885,13 +882,20 @@ def checkout(request):
             subject="product_request",
             message="Product request generated from checkout",
             company_name=request.user.company_name,
+            related_order=order,
         )
-        contact_request.related_fabric.set(fabric_list)
 
         # Clear the cart
         cart_items.delete()
 
-        return Response(order_serializer.data, status=status.HTTP_201_CREATED)
+        Response(
+            {
+                "request_number": contact_request.request_number,
+                "message": "Product request submitted successfully.",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
     else:
         return Response(order_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

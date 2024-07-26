@@ -130,7 +130,8 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 class ContactFormSerializer(serializers.Serializer):
     item_code = serializers.CharField(max_length=100, required=False, allow_blank=True)
     name = serializers.CharField(max_length=100)
-    subject = serializers.ChoiceField(choices=ContactRequest.REQUEST_TYPE_CHOICES)
+    request_type = serializers.ChoiceField(choices=ContactRequest.REQUEST_TYPE_CHOICES)
+    subject = serializers.CharField(max_length=255)
     email = serializers.EmailField()
     phone_number = serializers.CharField(max_length=20)
     company_name = serializers.CharField(max_length=100)
@@ -143,9 +144,7 @@ class ContactFormSerializer(serializers.Serializer):
 
         if subject == "product" and not item_code:
             raise serializers.ValidationError(
-                {
-                    "item_code": "Item code is required for product and product request inquiries."
-                }
+                {"item_code": "Item code is required for product enquiry."}
             )
 
         return data
