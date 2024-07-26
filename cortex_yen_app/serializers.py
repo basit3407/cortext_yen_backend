@@ -118,13 +118,7 @@ class UserLoginSerializer(serializers.Serializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = [
-            "name",
-            "company_name",
-            "address",
-            "phone",
-            "mobile_phone",
-        ]
+        fields = ["name", "company_name", "address", "phone", "mobile_phone", "email"]
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):

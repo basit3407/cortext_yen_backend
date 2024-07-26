@@ -800,7 +800,6 @@ class CartItemViewSet(viewsets.ModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         user = request.user
-        print(user)
         cart = get_object_or_404(Cart, user=user)
         cart_items = CartItem.objects.filter(cart=cart)
 
