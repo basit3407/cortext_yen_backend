@@ -862,13 +862,17 @@ def checkout(request):
         return Response({"detail": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
 
     order_data = {
-        "user": request.user,
+        "user_id": request.user.id,
         "items": [],
     }
 
     for item in cart_items:
         order_data["items"].append(
-            {"fabric": item.fabric.id, "color": item.color, "quantity": item.quantity}
+            {
+                "fabric_id": item.fabric.id,
+                "color": item.color,
+                "quantity": item.quantity,
+            }
         )
 
     order_serializer = OrderSerializer(data=order_data)
@@ -888,7 +892,7 @@ def checkout(request):
         # Clear the cart
         cart_items.delete()
 
-        Response(
+        return Response(
             {
                 "request_number": contact_request.request_number,
                 "message": "Product request submitted successfully.",
@@ -913,7 +917,17 @@ class ContactRequestListCreateAPIView(
         security=[{"token": []}],
     )
     def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        user_serializer = UserUpdateSerializer(request.user)
+
+        response_data = {
+            "user": user_serializer.data,
+            "contact_requests": serializer.data,
+        }
+
+        return Response(response_data)
 
     # @swagger_auto_schema(
     #     operation_description="Create a new contact request for the authenticated user",
@@ -925,8 +939,10 @@ class ContactRequestListCreateAPIView(
     #     return super().post(request, *args, **kwargs)
 
     def get_queryset(self):
-        return ContactRequest.objects.filter(user=self.request.user).annotate(
-            total_orders=Count("related_fabric")
+        return (
+            ContactRequest.objects.filter(user=self.request.user)
+            .annotate(total_orders=Count("related_fabric"))
+            .order_by("-created_at")  # Order by latest
         )
 
     # def perform_create(self, serializer):
@@ -943,7 +959,17 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
         security=[{"token": []}],
     )
     def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        user_serializer = UserUpdateSerializer(request.user)
+
+        response_data = {
+            "user": user_serializer.data,
+            "contact_request": serializer.data,
+        }
+
+        return Response(response_data)
 
     def get_queryset(self):
         return ContactRequest.objects.filter(user=self.request.user)

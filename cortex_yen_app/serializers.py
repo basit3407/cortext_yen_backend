@@ -139,10 +139,10 @@ class ContactFormSerializer(serializers.Serializer):
     sample_requested = serializers.BooleanField(default=False)
 
     def validate(self, data):
-        subject = data.get("subject")
+        request_type = data.get("request_type")
         item_code = data.get("item_code")
 
-        if subject == "product" and not item_code:
+        if request_type == "product" and not item_code:
             raise serializers.ValidationError(
                 {"item_code": "Item code is required for product enquiry."}
             )
@@ -251,26 +251,30 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    fabric = FabricSerializer()  # Nest the FabricSerializer
+    fabric_id = serializers.PrimaryKeyRelatedField(
+        queryset=Fabric.objects.all(), write_only=True, source="fabric"
+    )
+    fabric = FabricSerializer(read_only=True)
 
     class Meta:
         model = OrderItem
-        fields = ["id", "fabric", "color", "quantity"]
+        fields = ["id", "fabric", "color", "quantity", "fabric_id"]
 
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
-    user = UserUpdateSerializer()  # Include user data
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.all(), write_only=True, source="user"
+    )
 
     class Meta:
         model = Order
-        fields = ["user", "order_date", "items"]
+        fields = ["order_date", "items", "user_id"]
 
     def create(self, validated_data):
         items_data = validated_data.pop("items")
         user = validated_data.pop("user")
-        user_instance = CustomUser.objects.get(id=user.id)
-        order = Order.objects.create(user=user_instance, **validated_data)
+        order = Order.objects.create(user=user, **validated_data)
         for item_data in items_data:
             OrderItem.objects.create(order=order, **item_data)
         return order
@@ -391,25 +395,9 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class ContactRequestSerializer(serializers.ModelSerializer):
-    user = UserUpdateSerializer(read_only=True)
-    related_fabric_details = serializers.SerializerMethodField()
+    related_fabric = FabricSerializer(read_only=True)
+    related_order = OrderSerializer(read_only=True)
 
     class Meta:
         model = ContactRequest
-        fields = [
-            "id",
-            "user",
-            "request_number",
-            "subject",
-            "message",
-            "created_at",
-            "company_name",
-            "related_fabric_details",
-        ]
-
-    def get_related_fabric_details(self, obj):
-        if obj.subject in ["product", "product_request"]:
-            fabrics = obj.related_fabric.all()
-            return FabricSerializer(fabrics, many=True, context=self.context).data
-
-        return []
+        fields = "__all__"  # Ensure all fields are included
