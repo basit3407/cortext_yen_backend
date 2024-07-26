@@ -718,7 +718,7 @@ class ContactFormView(APIView):
             )
 
             if subject == "product":
-                contact_request.related_fabric.add(fabric)
+                contact_request.related_fabric = fabric
 
             # Send email
             email_subject = f"New {subject} from {name}"
@@ -862,18 +862,18 @@ def checkout(request):
         return Response({"detail": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
 
     order_data = {
-        "customer_name": request.user.name,
-        "customer_email": request.user.email,
+        "user_id": request.user.id,
         "items": [],
     }
 
-    fabric_list = []
-
     for item in cart_items:
         order_data["items"].append(
-            {"fabric": item.fabric.id, "color": item.color, "quantity": item.quantity}
+            {
+                "fabric_id": item.fabric.id,
+                "color": item.color,
+                "quantity": item.quantity,
+            }
         )
-        fabric_list.append(item.fabric)
 
     order_serializer = OrderSerializer(data=order_data)
     if order_serializer.is_valid():
@@ -882,16 +882,24 @@ def checkout(request):
         # Create a ContactRequest for the product request
         contact_request = ContactRequest.objects.create(
             user=request.user,
-            subject="product_request",
+            request_type="product_request",
+            subject="Product request generated from checkout",
             message="Product request generated from checkout",
             company_name=request.user.company_name,
+            related_order=order,
         )
-        contact_request.related_fabric.set(fabric_list)
 
         # Clear the cart
         cart_items.delete()
 
-        return Response(order_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "request_number": contact_request.request_number,
+                "message": "Product request submitted successfully.",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
     else:
         return Response(order_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -909,7 +917,17 @@ class ContactRequestListCreateAPIView(
         security=[{"token": []}],
     )
     def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        user_serializer = UserUpdateSerializer(request.user)
+
+        response_data = {
+            "user": user_serializer.data,
+            "contact_requests": serializer.data,
+        }
+
+        return Response(response_data)
 
     # @swagger_auto_schema(
     #     operation_description="Create a new contact request for the authenticated user",
@@ -921,8 +939,10 @@ class ContactRequestListCreateAPIView(
     #     return super().post(request, *args, **kwargs)
 
     def get_queryset(self):
-        return ContactRequest.objects.filter(user=self.request.user).annotate(
-            total_orders=Count("related_fabric")
+        return (
+            ContactRequest.objects.filter(user=self.request.user)
+            .annotate(total_orders=Count("related_fabric"))
+            .order_by("-created_at")  # Order by latest
         )
 
     # def perform_create(self, serializer):
@@ -939,7 +959,17 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
         security=[{"token": []}],
     )
     def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        user_serializer = UserUpdateSerializer(request.user)
+
+        response_data = {
+            "user": user_serializer.data,
+            "contact_request": serializer.data,
+        }
+
+        return Response(response_data)
 
     def get_queryset(self):
         return ContactRequest.objects.filter(user=self.request.user)

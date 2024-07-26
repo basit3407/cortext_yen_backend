@@ -21,16 +21,18 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("customer_name", "customer_email", "request_number")
+    list_display = ("get_customer_name", "get_customer_email", "order_date")
     inlines = [OrderItemInline]
 
-    def save_model(self, request, obj, form, change):
-        # Save the order first to generate the ID
-        super().save_model(request, obj, form, change)
-        # Ensure the request_number is generated if it does not exist
-        if not obj.request_number:
-            obj.request_number = obj.generate_request_number()
-            obj.save()
+    def get_customer_name(self, obj):
+        return obj.user.name
+
+    get_customer_name.short_description = "Customer Name"
+
+    def get_customer_email(self, obj):
+        return obj.user.email
+
+    get_customer_email.short_description = "Customer Email"
 
 
 admin.site.register(CustomUser)
@@ -38,6 +40,7 @@ admin.site.register(ProductCategory)
 admin.site.register(Fabric)
 admin.site.register(Cart)
 admin.site.register(Favorite)
+admin.site.register(ContactRequest)
 # admin.site.register(Order)
 # admin.site.register(OrderItem)
 admin.site.register(Event)

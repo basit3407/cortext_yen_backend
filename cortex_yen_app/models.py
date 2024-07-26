@@ -99,7 +99,7 @@ class Fabric(models.Model):
         default=list,
         validators=[validate_colors],
     )
-    item_code = models.CharField(max_length=100)
+    item_code = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_hot_selling = models.BooleanField(default=False)
 
@@ -120,26 +120,13 @@ class Favorite(models.Model):
 
 class Order(models.Model):
     fabrics = models.ManyToManyField(Fabric, through="OrderItem")
-    customer_name = models.CharField(max_length=255)
-    customer_email = models.EmailField()
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, null=True, blank=True
+    )
     order_date = models.DateTimeField(auto_now_add=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    request_number = models.CharField(max_length=12, blank=True, unique=True)
 
     def __str__(self):
-        return f"Order #{self.id} - {self.customer_name}"
-
-    def save(self, *args, **kwargs):
-        super(Order, self).save(*args, **kwargs)
-        if not self.request_number:
-            self.request_number = self.generate_request_number()
-            self.save()
-
-    def generate_request_number(self):
-        random_str = get_random_string(
-            length=5, allowed_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        )
-        return f"{self.id}{random_str}"
+        return f"Order #{self.id} - {self.user.name}"
 
 
 class OrderItem(models.Model):
@@ -213,31 +200,39 @@ class ContactRequest(models.Model):
     REQUEST_TYPE_CHOICES = [
         ("general", "General Inquiry"),
         ("product", "Product Inquiry"),
-        ("custom", "Customization Inquiry"),
-        ("order", "Order Inquiry"),
         ("product_request", "Product Request"),
-        ("other", "Other"),
     ]
 
     user = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, null=True, blank=True
     )
-    request_number = models.CharField(max_length=12, unique=True, blank=True)
-    subject = models.CharField(max_length=255, choices=REQUEST_TYPE_CHOICES)
+    request_number = models.CharField(max_length=12, blank=True)
+    request_type = models.CharField(
+        max_length=255, choices=REQUEST_TYPE_CHOICES, default="general"
+    )
+    subject = models.CharField(max_length=255, blank=True)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    related_fabric = models.ManyToManyField(Fabric, blank=True)
+    related_fabric = models.ForeignKey(
+        Fabric, null=True, blank=True, on_delete=models.CASCADE
+    )
     company_name = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True, null=True)
     sample_requested = models.BooleanField(default=False)
+    related_order = models.ForeignKey(
+        Order, null=True, blank=True, on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return f"Request {self.request_number} by {self.user.username}"
 
     def save(self, *args, **kwargs):
-        if not self.request_number:
-            self.request_number = self.generate_request_number()
+        is_new = self.pk is None
         super(ContactRequest, self).save(*args, **kwargs)
+        if is_new:
+            if not self.request_number:
+                self.request_number = self.generate_request_number()
+                self.save()
 
     def generate_request_number(self):
         random_str = get_random_string(
