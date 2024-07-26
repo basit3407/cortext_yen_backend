@@ -696,6 +696,7 @@ class ContactFormView(APIView):
             email = validated_data["email"]
             phone_number = validated_data["phone_number"]
             company_name = validated_data["company_name"]
+            request_type = validated_data["request_type"]
             sample_requested = validated_data["sample_requested"]
 
             fabric = None
@@ -715,6 +716,7 @@ class ContactFormView(APIView):
                 message=message,
                 company_name=company_name,
                 sample_requested=sample_requested,
+                request_type=request_type,
             )
 
             if subject == "product":
@@ -918,6 +920,7 @@ class ContactRequestListCreateAPIView(
     )
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+
         serializer = self.get_serializer(queryset, many=True)
 
         user_serializer = UserUpdateSerializer(request.user)
