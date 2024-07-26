@@ -804,7 +804,7 @@ class CartItemViewSet(viewsets.ModelViewSet):
         cart = get_object_or_404(Cart, user=user)
         cart_items = CartItem.objects.filter(cart=cart)
 
-        user_data = UserSerializer(user).data
+        user_data = UserUpdateSerializer(user).data
         cart_items_data = CartItemSerializer(
             cart_items, many=True, context={"request": request}
         ).data

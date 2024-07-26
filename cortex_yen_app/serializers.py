@@ -124,7 +124,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "address",
             "phone",
             "mobile_phone",
-            "photo",
         ]
 
 
@@ -414,6 +413,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class ContactRequestSerializer(serializers.ModelSerializer):
+    user = UserUpdateSerializer(read_only=True)
     related_fabric_details = serializers.SerializerMethodField()
 
     class Meta:
@@ -432,11 +432,6 @@ class ContactRequestSerializer(serializers.ModelSerializer):
     def get_related_fabric_details(self, obj):
         if obj.subject in ["product", "product_request"]:
             fabrics = obj.related_fabric.all()
-            return FabricSerializer(fabrics, many=True).data
-        return []
+            return FabricSerializer(fabrics, many=True, context=self.context).data
 
-    def create(self, validated_data):
-        fabrics = validated_data.pop("related_fabric", [])
-        contact_request = super().create(validated_data)
-        contact_request.related_fabric.set(fabrics)
-        return contact_request
+        return []
