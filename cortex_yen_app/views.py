@@ -61,6 +61,8 @@ from django.core.mail import EmailMessage
 from django.contrib.auth.admin import sensitive_post_parameters_m
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class GoogleLoginAPIView(APIView):
@@ -668,6 +670,15 @@ class EventViewSet(viewsets.ModelViewSet):
 class BlogViewSet(viewsets.ModelViewSet):
     queryset = Blog.objects.all()
     serializer_class = BlogSerializer
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filterset_fields = ["tags"]
+    search_fields = ["title", "content", "tags"]
+    ordering_fields = ["created_at", "title"]
+    ordering = ["-created_at"]  # Default ordering
 
     @swagger_auto_schema(responses={200: BlogSerializer(many=True)})
     def list(self, request, *args, **kwargs):

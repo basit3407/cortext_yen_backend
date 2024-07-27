@@ -298,19 +298,27 @@ class EventSerializer(serializers.ModelSerializer):
 class BlogSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
     author_photo_url = serializers.SerializerMethodField()
+    author_name = serializers.CharField(source="author.username", read_only=True)
 
     class Meta:
         model = Blog
-        extra_fields = ["photo_url", "author_photo_url"]
-        # Include all fields except the 'photo' field explicitly
-        exclude = ["photo"]
+        fields = [
+            "id",
+            "title",
+            "content",
+            "author_name",
+            "tags",
+            "created_at",
+            "photo_url",
+            "author_photo_url",
+        ]
 
     def get_photo_url(self, obj):
         if obj.photo and obj.photo.file:
             return obj.photo.file.url
         return None
 
-    def get_owner_photo_url(self, obj):
+    def get_author_photo_url(self, obj):
         if obj.author.photo and obj.author.photo.file:
             return obj.author.photo.file.url
         return None
@@ -400,4 +408,4 @@ class ContactRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContactRequest
-        fields = "__all__"  # Ensure all fields are included
+        exclude = ["user"]
