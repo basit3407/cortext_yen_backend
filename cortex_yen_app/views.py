@@ -717,10 +717,8 @@ class ContactFormView(APIView):
                 company_name=company_name,
                 sample_requested=sample_requested,
                 request_type=request_type,
+                related_fabric=fabric if request_type == "product" else None,
             )
-
-            if subject == "product":
-                contact_request.related_fabric = fabric
 
             # Send email
             email_subject = f"New {subject} from {name}"
