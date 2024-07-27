@@ -307,6 +307,7 @@ class BlogSerializer(serializers.ModelSerializer):
             "title",
             "content",
             "author_name",
+            "view_count",
             "tags",
             "created_at",
             "photo_url",

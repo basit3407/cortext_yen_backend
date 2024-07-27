@@ -12,7 +12,8 @@ from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
 from drf_yasg import openapi
 
-from cortex_yen_app.pagination import CustomPagination
+from .filters import BlogFilter
+from .pagination import CustomPagination
 from .models import (
     Blog,
     Cart,
@@ -22,7 +23,6 @@ from .models import (
     Event,
     Fabric,
     Favorite,
-    Order,
     ProductCategory,
 )
 from .serializers import (
@@ -670,6 +670,7 @@ class EventViewSet(viewsets.ModelViewSet):
 class BlogViewSet(viewsets.ModelViewSet):
     queryset = Blog.objects.all()
     serializer_class = BlogSerializer
+    filterset_class = BlogFilter  # Use the custom filter class
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -677,7 +678,11 @@ class BlogViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["tags"]
     search_fields = ["title", "content", "tags"]
-    ordering_fields = ["created_at", "title"]
+    ordering_fields = [
+        "created_at",
+        "title",
+        "view_count",
+    ]
     ordering = ["-created_at"]  # Default ordering
 
     @swagger_auto_schema(responses={200: BlogSerializer(many=True)})
@@ -686,6 +691,10 @@ class BlogViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(responses={200: BlogSerializer()})
     def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.view_count += 1
+        instance.save()
+
         return super().retrieve(request, *args, **kwargs)
 
 

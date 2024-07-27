@@ -163,6 +163,7 @@ class Blog(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    view_count = models.PositiveIntegerField(default=0)  # New field for tracking views
     photo = models.ForeignKey(
         MediaUploads,
         on_delete=models.DO_NOTHING,
