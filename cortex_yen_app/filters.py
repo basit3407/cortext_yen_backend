@@ -4,12 +4,12 @@ from .models import Blog
 
 
 class BlogFilter(filters.FilterSet):
-    tags = django_filters.CharFilter(method="filter_by_tags")
+    category = django_filters.CharFilter(method="filter_by_category")
 
     class Meta:
         model = Blog
-        fields = ["tags"]
+        fields = ["category"]
 
-    def filter_by_tags(self, queryset, name, value):
-        tags = value.split(",")
-        return queryset.filter(tags__in=tags).distinct()
+    def filter_by_category(self, queryset, name, value):
+        categories = value.split(",")
+        return queryset.filter(category__in=categories).distinct()

@@ -171,7 +171,7 @@ class Blog(models.Model):
         null=True,
         blank=True,
     )
-    tags = models.CharField(max_length=255)
+    category = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

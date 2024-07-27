@@ -676,8 +676,8 @@ class BlogViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
-    filterset_fields = ["tags"]
-    search_fields = ["title", "content", "tags"]
+    filterset_fields = ["category"]
+    search_fields = ["title", "content", "category"]
     ordering_fields = [
         "created_at",
         "title",
