@@ -190,10 +190,24 @@ CKEDITOR_5_CONFIGS = {
                 "Verdana, Geneva, sans-serif",
             ],
         },
-        # "fontSize": {
-        #     "options": ["tiny", "small", "default", "big", "huge"],
-        #     "supportAllValues": True,
-        # },
+        "fontSize": {
+            "options": [
+                "8",
+                "10",
+                "12",
+                "14",
+                "16",
+                "18",
+                "20",
+                "24",
+                "28",
+                "32",
+                "36",
+                "40",
+                "48",
+            ],
+            "supportAllValues": True,
+        },
         "fontColor": {
             "columns": 5,
             "documentColors": 10,
