@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
+from django_ckeditor_5.fields import CKEditor5Field
 from django.utils.crypto import get_random_string
 from .validators import validate_colors
 
@@ -168,7 +169,9 @@ class BlogCategory(models.Model):
 
 class Blog(models.Model):
     title = models.CharField(max_length=255)
-    content = models.TextField()
+    content = content = CKEditor5Field(
+        "Text", config_name="default"
+    )  # Use CKEditor5Field
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     view_count = models.PositiveIntegerField(default=0)  # New field for tracking views
     photo = models.ForeignKey(

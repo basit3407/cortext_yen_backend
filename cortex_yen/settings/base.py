@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "storages",
     "corsheaders",
+    "django_ckeditor_5",
 ]
 
 REST_FRAMEWORK = {
@@ -143,3 +144,21 @@ DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+CKEDITOR_5_CONFIGS = {
+    "default": {
+        "toolbar": [
+            "heading",
+            "|",
+            "bold",
+            "italic",
+            "link",
+            "bulletedList",
+            "numberedList",
+            "blockQuote",
+            "imageUpload",
+        ],
+        "height": 300,
+        "width": "auto",
+    }
+}
