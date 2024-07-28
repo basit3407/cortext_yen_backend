@@ -2,6 +2,7 @@ from django.db import IntegrityError
 from rest_framework import serializers
 from .models import (
     Blog,
+    BlogCategory,
     # Cart,
     CartItem,
     ContactRequest,
@@ -295,10 +296,17 @@ class EventSerializer(serializers.ModelSerializer):
         return None
 
 
+class BlogCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogCategory
+        fields = ["id", "name"]
+
+
 class BlogSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
     author_photo_url = serializers.SerializerMethodField()
     author_name = serializers.CharField(source="author.username", read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
 
     class Meta:
         model = Blog
@@ -308,7 +316,7 @@ class BlogSerializer(serializers.ModelSerializer):
             "content",
             "author_name",
             "view_count",
-            "category",
+            "category_name",
             "created_at",
             "photo_url",
             "author_photo_url",

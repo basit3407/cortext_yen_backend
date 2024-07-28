@@ -16,6 +16,7 @@ from .filters import BlogFilter
 from .pagination import CustomPagination
 from .models import (
     Blog,
+    BlogCategory,
     Cart,
     CartItem,
     ContactRequest,
@@ -26,6 +27,7 @@ from .models import (
     ProductCategory,
 )
 from .serializers import (
+    BlogCategorySerializer,
     BlogSerializer,
     CartItemSerializer,
     # CartSerializer,
@@ -677,7 +679,7 @@ class BlogViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     ]
     filterset_fields = ["category"]
-    search_fields = ["title", "content", "category"]
+    search_fields = ["title", "content", "category__name"]
     ordering_fields = [
         "created_at",
         "title",
@@ -774,6 +776,11 @@ class ContactFormView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BlogCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = BlogCategory.objects.all()
+    serializer_class = BlogCategorySerializer
 
 
 # class CartViewSet(viewsets.ModelViewSet):

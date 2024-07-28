@@ -1,6 +1,6 @@
 import django_filters
 from django_filters import rest_framework as filters
-from .models import Blog
+from .models import Blog, BlogCategory
 
 
 class BlogFilter(filters.FilterSet):
@@ -12,4 +12,4 @@ class BlogFilter(filters.FilterSet):
 
     def filter_by_category(self, queryset, name, value):
         categories = value.split(",")
-        return queryset.filter(category__in=categories).distinct()
+        return queryset.filter(category__name__in=categories).distinct()

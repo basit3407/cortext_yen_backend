@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework import routers
 from .views import (
     # BestSellingFabricsAPIView,
+    BlogCategoryViewSet,
     BlogViewSet,
     CartItemViewSet,
     # CartViewSet,
@@ -29,6 +30,8 @@ router = routers.DefaultRouter()
 # router.register(r"orders", OrderViewSet)
 router.register(r"events", EventViewSet)
 router.register(r"blogs", BlogViewSet)
+router.register(r"blog-categories", BlogCategoryViewSet)
+
 # router.register(r"cart", CartViewSet, basename="cart")
 router.register(r"cart-items", CartItemViewSet, basename="cartitem")
 
