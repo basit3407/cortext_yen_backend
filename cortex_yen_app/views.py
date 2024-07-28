@@ -672,6 +672,7 @@ class EventViewSet(viewsets.ModelViewSet):
 class BlogViewSet(viewsets.ModelViewSet):
     queryset = Blog.objects.all()
     serializer_class = BlogSerializer
+    pagination_class = CustomPagination
     filterset_class = BlogFilter  # Use the custom filter class
     filter_backends = [
         DjangoFilterBackend,
