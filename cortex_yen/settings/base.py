@@ -145,6 +145,7 @@ DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+
 CKEDITOR_5_CONFIGS = {
     "default": {
         "toolbar": [
@@ -152,12 +153,27 @@ CKEDITOR_5_CONFIGS = {
             "|",
             "bold",
             "italic",
+            "underline",
+            "strikethrough",
             "link",
             "bulletedList",
             "numberedList",
             "blockQuote",
             "imageUpload",
-            "fontFamily",  # Add fontFamily to the toolbar
+            "|",
+            "fontFamily",
+            "fontSize",
+            "fontColor",
+            "fontBackgroundColor",
+            "|",
+            "alignment",
+            "outdent",
+            "indent",
+            "|",
+            "insertTable",
+            "mediaEmbed",
+            "undo",
+            "redo",
         ],
         "height": 300,
         "width": "auto",
@@ -173,7 +189,21 @@ CKEDITOR_5_CONFIGS = {
                 "Trebuchet MS, Helvetica, sans-serif",
                 "Verdana, Geneva, sans-serif",
             ],
-            "supportAllValues": True,
+        },
+        # "fontSize": {
+        #     "options": ["tiny", "small", "default", "big", "huge"],
+        #     "supportAllValues": True,
+        # },
+        "fontColor": {
+            "columns": 5,
+            "documentColors": 10,
+        },
+        "fontBackgroundColor": {
+            "columns": 5,
+            "documentColors": 10,
+        },
+        "alignment": {
+            "options": ["left", "right", "center", "justify"],
         },
     }
 }
