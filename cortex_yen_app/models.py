@@ -260,6 +260,8 @@ class ContactDetails(models.Model):
     city = models.CharField(max_length=50)
     county = models.CharField(max_length=50)
     postal_code = models.CharField(max_length=10)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, default=24.0708)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, default=120.5409)
     country = models.CharField(max_length=50)
     facebook = models.URLField(blank=True, null=True)
     instagram = models.URLField(blank=True, null=True)
