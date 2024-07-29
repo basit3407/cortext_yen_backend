@@ -117,20 +117,18 @@ class GoogleLoginAPIView(APIView):
     def post(self, request):
         id_token_value = request.data.get("idToken")
 
-        CLIENT_ID = (
-            "81090684417-hhflg4bqed9akoo0seelvuirrc3dffv8.apps.googleusercontent.com"
-        )
-
         try:
-            decoded_token = id_token.verify_oauth2_token(
-                id_token_value, requests.Request(), CLIENT_ID
+            decoded_token = id_token.verify_firebase_token(
+                id_token_value, requests.Request(), "corlee-85a80"
             )
             email = decoded_token["email"]
             name = decoded_token.get("name", "")
 
             try:
                 user = CustomUser.objects.get(email=email)
+
             except CustomUser.DoesNotExist:
+
                 user = CustomUser.objects.create_user(email=email, username=email)
                 user.name = name
                 user.auth_method = "google"
@@ -139,20 +137,22 @@ class GoogleLoginAPIView(APIView):
                 # Create a cart for the new user
                 Cart.objects.create(user=user)
 
-            authenticated_user = authenticate(username=user.username, password=None)
+                # authenticated_user = authenticate(username=user.username, password=None)
+                # print("auth user = ", authenticated_user)
 
-            if authenticated_user is not None:
-                token, _ = Token.objects.get_or_create(user=authenticated_user)
-                user_data = UserSerializer(user).data
-                return Response(
-                    {"token": token.key, "user": user_data},
-                    status=status.HTTP_200_OK,
-                )
-            else:
-                return Response(
-                    {"error": "Authentication failed"},
-                    status=status.HTTP_401_UNAUTHORIZED,
-                )
+                # if authenticated_user is not None:
+            token, _ = Token.objects.get_or_create(user=user)
+            user_data = UserSerializer(user).data
+            return Response(
+                {"token": token.key, "user": user_data},
+                status=status.HTTP_200_OK,
+            )
+            # else:
+            #     print("i am called")
+            #     return Response(
+            #         {"error": "Authentication failed"},
+            #         status=status.HTTP_401_UNAUTHORIZED,
+            #     )
 
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
