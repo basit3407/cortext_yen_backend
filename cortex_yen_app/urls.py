@@ -5,6 +5,7 @@ from .views import (
     BlogCategoryViewSet,
     BlogViewSet,
     CartItemViewSet,
+    ContactDetailsView,
     # CartViewSet,
     ContactFormView,
     ContactRequestDetailAPIView,
@@ -37,6 +38,7 @@ router.register(r"cart-items", CartItemViewSet, basename="cartitem")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("contact-details/", ContactDetailsView.as_view(), name="contact-details"),
     path("ckeditor5/", include("django_ckeditor_5.urls")),  # Include CKEditor 5 URLs
     path("register/", UserRegistrationAPIView.as_view(), name="user_registration"),
     path("login/", UserLoginAPIView.as_view(), name="user_login"),

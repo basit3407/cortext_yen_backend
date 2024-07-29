@@ -14,6 +14,7 @@ from .models import (
     Order,
     OrderItem,
     ProductCategory,
+    ContactDetails,
 )
 from django.core.mail import send_mail
 from django.conf import settings
@@ -418,3 +419,9 @@ class ContactRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactRequest
         exclude = ["user"]
+
+
+class ContactDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactDetails
+        fields = "__all__"

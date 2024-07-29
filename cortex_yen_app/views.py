@@ -19,6 +19,7 @@ from .models import (
     BlogCategory,
     Cart,
     CartItem,
+    ContactDetails,
     ContactRequest,
     CustomUser,
     Event,
@@ -30,6 +31,7 @@ from .serializers import (
     BlogCategorySerializer,
     BlogSerializer,
     CartItemSerializer,
+    ContactDetailsSerializer,
     # CartSerializer,
     ContactFormSerializer,
     ContactRequestSerializer,
@@ -1022,3 +1024,14 @@ class UserUpdateAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ContactDetailsView(APIView):
+    def get(self, request):
+        contact_details = ContactDetails.objects.first()
+        if contact_details:
+            serializer = ContactDetailsSerializer(contact_details)
+            return Response(serializer.data)
+        return Response(
+            {"detail": "No contact details found."}, status=status.HTTP_404_NOT_FOUND
+        )

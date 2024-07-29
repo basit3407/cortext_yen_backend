@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django_ckeditor_5.fields import CKEditor5Field
 from django.utils.crypto import get_random_string
 from .validators import validate_colors
@@ -250,3 +251,27 @@ class ContactRequest(models.Model):
             length=5, allowed_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         )
         return f"{self.id}{random_str}"
+
+
+class ContactDetails(models.Model):
+    phone = models.CharField(max_length=20)
+    email = models.EmailField()
+    address = models.CharField(max_length=255)
+    city = models.CharField(max_length=50)
+    county = models.CharField(max_length=50)
+    postal_code = models.CharField(max_length=10)
+    country = models.CharField(max_length=50)
+    facebook = models.URLField(blank=True, null=True)
+    instagram = models.URLField(blank=True, null=True)
+    whatsapp = models.CharField(blank=True, null=True, max_length=255)
+    line = models.CharField(blank=True, null=True, max_length=255)
+
+    def save(self, *args, **kwargs):
+        if not self.pk and ContactDetails.objects.exists():
+            raise ValidationError(
+                "There is already a ContactDetails instance. Only one instance is allowed."
+            )
+        return super(ContactDetails, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.email

@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import (
     Blog,
     BlogCategory,
+    ContactDetails,
     CustomUser,
     Event,
     ProductCategory,
@@ -43,6 +44,7 @@ admin.site.register(Cart)
 admin.site.register(Favorite)
 admin.site.register(ContactRequest)
 admin.site.register(BlogCategory)
+admin.site.register(ContactDetails)
 # admin.site.register(Order)
 # admin.site.register(OrderItem)
 admin.site.register(Event)
