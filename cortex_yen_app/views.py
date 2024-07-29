@@ -122,7 +122,7 @@ class GoogleLoginAPIView(APIView):
         )
 
         try:
-            decoded_token = id_token.verify_oauth2_token(
+            decoded_token = id_token.verify_firebase_token(
                 id_token_value, requests.Request(), CLIENT_ID
             )
             email = decoded_token["email"]
