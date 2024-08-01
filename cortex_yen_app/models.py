@@ -8,7 +8,7 @@ from .validators import validate_colors
 
 
 class MediaUploads(models.Model):
-    file = models.FileField(upload_to="corlee/uploads/")
+    file = models.FileField(upload_to="corlee/uploads/", max_length=255)
 
 
 class CustomUser(AbstractUser):
