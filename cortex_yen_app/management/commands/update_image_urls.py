@@ -18,20 +18,19 @@ class Command(BaseCommand):
             for instance in MediaUploads.objects.all():
                 if instance.file:
                     old_url = instance.file.url
-                    # Check if the old URL format needs correction
-                    if old_url.startswith(
-                        "https://d1emfok2hfg9f.cloudfront.net/https%3A/"
-                    ):
-                        corrected_url = old_url.replace(
-                            "https://d1emfok2hfg9f.cloudfront.net/https%3A/", "https://"
-                        )
-                        new_url = corrected_url.replace(
-                            OLD_BUCKET_URL, NEW_CLOUDFRONT_URL
+                    # Correct the URL to include 'corlee/uploads/'
+                    if not old_url.startswith(NEW_CLOUDFRONT_URL):
+                        new_url = NEW_CLOUDFRONT_URL + instance.file.name.split("/")[-1]
+                        instance.file.name = (
+                            "corlee/uploads/" + instance.file.name.split("/")[-1]
                         )
                     else:
-                        new_url = old_url.replace(OLD_BUCKET_URL, NEW_CLOUDFRONT_URL)
-                    # Update the file name to be relative to the MEDIA_URL
-                    instance.file.name = new_url.replace(settings.MEDIA_URL, "")
+                        new_url = old_url.replace(
+                            settings.MEDIA_URL, NEW_CLOUDFRONT_URL
+                        )
+                        instance.file.name = (
+                            "corlee/uploads/" + instance.file.name.split("/")[-1]
+                        )
                     instance.save()
 
         update_media_urls()
