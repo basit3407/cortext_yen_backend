@@ -20,6 +20,7 @@ from .views import (
     GoogleLoginAPIView,
     # OrderViewSet,
     ProductCategoryListAPIView,
+    SubscriptionView,
     ToggleFavoriteView,
     UserRegistrationAPIView,
     UserLoginAPIView,
@@ -85,4 +86,5 @@ urlpatterns = [
         name="contact-request-detail",
     ),
     path("edit/", UserUpdateAPIView.as_view(), name="user-update"),
+    path("subscribe/", SubscriptionView.as_view(), name="subscribe"),
 ]

@@ -42,6 +42,7 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     ProductCategorySerializer,
+    SubscriptionSerializer,
     UserSerializer,
     UserLoginSerializer,
     UserUpdateSerializer,
@@ -1001,3 +1002,15 @@ class ContactDetailsView(APIView):
         return Response(
             {"detail": "No contact details found."}, status=status.HTTP_404_NOT_FOUND
         )
+
+
+class SubscriptionView(APIView):
+    def post(self, request):
+        serializer = SubscriptionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Email subscribed successfully"},
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

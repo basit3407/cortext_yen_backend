@@ -15,6 +15,7 @@ from .models import (
     OrderItem,
     ProductCategory,
     ContactDetails,
+    Subscription,
 )
 from django.core.mail import send_mail
 from django.conf import settings
@@ -425,3 +426,14 @@ class ContactDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactDetails
         fields = "__all__"
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ["email"]
+
+    def validate_email(self, value):
+        if Subscription.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This email is already subscribed.")
+        return value
