@@ -111,6 +111,13 @@ class Fabric(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_hot_selling = models.BooleanField(default=False)
 
+    def clean(self):
+        super().clean()
+        if not self.color_images.exists():
+            raise ValidationError(
+                "You must add at least one color along with the primary image."
+            )
+
     def __str__(self):
         return self.title
 

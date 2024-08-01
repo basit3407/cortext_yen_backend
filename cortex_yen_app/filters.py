@@ -31,7 +31,7 @@ class FabricFilter(filters.FilterSet):
         },
         label="sort by",
     )
-    colors = filters.BaseInFilter(field_name="available_colors", lookup_expr="contains")
+    colors = filters.BaseInFilter(method="filter_by_colors")
     item_code = filters.CharFilter(field_name="item_code", lookup_expr="icontains")
 
     class Meta:
@@ -55,6 +55,9 @@ class FabricFilter(filters.FilterSet):
                     Q(title__icontains=value) | Q(item_code__icontains=value)
                 )
         return queryset
+
+    def filter_by_colors(self, queryset, name, value):
+        return queryset.filter(color_images__color__in=value)
 
     def filter_queryset(self, queryset):
         # Annotate the queryset with the number of orders

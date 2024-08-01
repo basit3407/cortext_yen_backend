@@ -28,6 +28,12 @@ class FabricAdmin(admin.ModelAdmin):
     list_display = ("title", "product_category", "item_code", "is_hot_selling")
     search_fields = ("title", "product_category__name", "item_code")
 
+    def save_model(self, request, obj, form, change):
+        # Call the custom validation method
+        obj.clean()
+        # Save the object if validation passes
+        super().save_model(request, obj, form, change)
+
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem

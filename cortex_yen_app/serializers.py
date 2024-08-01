@@ -159,20 +159,6 @@ class ContactFormSerializer(serializers.Serializer):
         return data
 
 
-class FabricListSerializer(serializers.ModelSerializer):
-    photo_url = serializers.SerializerMethodField()
-    product_category = serializers.CharField(source="product_category.name")
-
-    class Meta:
-        model = Fabric
-        fields = ["id", "item_code", "product_category", "finish", "photo_url"]
-
-    def get_photo_url(self, obj):
-        if obj.photo and obj.photo.file:
-            return obj.photo.file.url
-        return None
-
-
 class FabricColorImageSerializer(serializers.ModelSerializer):
     primary_image_url = serializers.CharField(
         source="primary_image.file.url", read_only=True
@@ -190,6 +176,21 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
             "aux_image2_url",
             "aux_image3_url",
         ]
+
+
+class FabricListSerializer(serializers.ModelSerializer):
+    # photo_url = serializers.SerializerMethodField()
+    product_category = serializers.CharField(source="product_category.name")
+    color_images = FabricColorImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Fabric
+        fields = ["id", "item_code", "product_category", "finish", "color_images"]
+
+    # def get_photo_url(self, obj):
+    #     if obj.photo and obj.photo.file:
+    #         return obj.photo.file.url
+    #     return None
 
 
 class FabricSerializer(serializers.ModelSerializer):
