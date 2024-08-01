@@ -3,8 +3,6 @@ import os
 import django_heroku
 import dj_database_url
 
-from cortex_yen_app.models import MediaUploads
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.getenv(
@@ -229,17 +227,3 @@ from django.db import transaction
 
 OLD_BUCKET_URL = "https://corleebe.s3.ap-southeast-1.amazonaws.com/corlee/uploads/"
 NEW_CLOUDFRONT_URL = "https://d1emfok2hfg9f.cloudfront.net/corlee/uploads/"
-
-
-@transaction.atomic
-def update_media_urls():
-    for instance in MediaUploads.objects.all():
-        if instance.file:  # Check if the file field is not empty
-            new_url = instance.file.url.replace(OLD_BUCKET_URL, NEW_CLOUDFRONT_URL)
-            instance.file.name = new_url.replace(
-                MEDIA_URL, ""
-            )  # Update the file name to the new path
-            instance.save()
-
-
-update_media_urls()
