@@ -11,6 +11,42 @@ class MediaUploads(models.Model):
     file = models.FileField(upload_to="corlee/uploads/", max_length=255)
 
 
+class FabricColorImage(models.Model):
+    fabric = models.ForeignKey(
+        "Fabric", on_delete=models.CASCADE, related_name="color_images"
+    )
+    color = models.CharField(max_length=50)
+    primary_image = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="primary_images",
+    )
+    aux_image1 = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="aux_image1",
+        null=True,
+        blank=True,
+    )
+    aux_image2 = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="aux_image2",
+        null=True,
+        blank=True,
+    )
+    aux_image3 = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="aux_image3",
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"{self.color} images for {self.fabric.title}"
+
+
 class CustomUser(AbstractUser):
     AUTH_METHOD_CHOICES = (
         ("google", "Google"),
@@ -66,46 +102,11 @@ class ProductCategory(models.Model):
 
 class Fabric(models.Model):
     product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
-    photo = models.ForeignKey(
-        MediaUploads,
-        on_delete=models.DO_NOTHING,
-        related_name="fabric_photos",
-        null=True,
-        blank=True,
-    )
-    aux_photo1 = models.ForeignKey(
-        MediaUploads,
-        on_delete=models.DO_NOTHING,
-        related_name="aux_photo1",
-        null=True,
-        blank=True,
-    )
-    aux_photo2 = models.ForeignKey(
-        MediaUploads,
-        on_delete=models.DO_NOTHING,
-        related_name="aux_photo2",
-        null=True,
-        blank=True,
-    )
-    aux_photo3 = models.ForeignKey(
-        MediaUploads,
-        on_delete=models.DO_NOTHING,
-        related_name="aux_photo3",
-        null=True,
-        blank=True,
-    )
-
     title = models.CharField(max_length=255)
     description = models.CharField(max_length=100)
     composition = models.CharField(max_length=255)
     weight = models.CharField(max_length=100)
     finish = models.CharField(max_length=100)
-    available_colors = ArrayField(
-        models.CharField(max_length=50),
-        blank=True,
-        default=list,
-        validators=[validate_colors],
-    )
     item_code = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_hot_selling = models.BooleanField(default=False)

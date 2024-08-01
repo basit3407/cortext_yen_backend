@@ -5,6 +5,7 @@ from .models import (
     ContactDetails,
     CustomUser,
     Event,
+    FabricColorImage,
     ProductCategory,
     Fabric,
     Cart,
@@ -15,6 +16,17 @@ from .models import (
     ContactRequest,
     Subscription,
 )
+
+
+class FabricColorImageInline(admin.TabularInline):
+    model = FabricColorImage
+    extra = 1  # Number of extra forms to display
+
+
+class FabricAdmin(admin.ModelAdmin):
+    inlines = [FabricColorImageInline]
+    list_display = ("title", "product_category", "item_code", "is_hot_selling")
+    search_fields = ("title", "product_category__name", "item_code")
 
 
 class OrderItemInline(admin.TabularInline):
@@ -40,7 +52,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 admin.site.register(CustomUser)
 admin.site.register(ProductCategory)
-admin.site.register(Fabric)
+admin.site.register(Fabric, FabricAdmin)
 admin.site.register(Cart)
 admin.site.register(Favorite)
 admin.site.register(ContactRequest)
@@ -52,3 +64,9 @@ admin.site.register(Subscription)
 admin.site.register(Event)
 admin.site.register(Blog)
 admin.site.register(MediaUploads)
+
+
+@admin.register(FabricColorImage)
+class FabricColorImageAdmin(admin.ModelAdmin):
+    list_display = ("fabric", "color")
+    search_fields = ("fabric__title", "color")

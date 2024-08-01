@@ -9,6 +9,7 @@ from .models import (
     CustomUser,
     Event,
     Fabric,
+    FabricColorImage,
     Favorite,
     MediaUploads,
     Order,
@@ -172,44 +173,36 @@ class FabricListSerializer(serializers.ModelSerializer):
         return None
 
 
+class FabricColorImageSerializer(serializers.ModelSerializer):
+    primary_image_url = serializers.CharField(
+        source="primary_image.file.url", read_only=True
+    )
+    aux_image1_url = serializers.CharField(source="aux_image1.file.url", read_only=True)
+    aux_image2_url = serializers.CharField(source="aux_image2.file.url", read_only=True)
+    aux_image3_url = serializers.CharField(source="aux_image3.file.url", read_only=True)
+
+    class Meta:
+        model = FabricColorImage
+        fields = [
+            "color",
+            "primary_image_url",
+            "aux_image1_url",
+            "aux_image2_url",
+            "aux_image3_url",
+        ]
+
+
 class FabricSerializer(serializers.ModelSerializer):
-    photo_url = serializers.SerializerMethodField()
-    aux_photo1_url = serializers.SerializerMethodField()
-    aux_photo2_url = serializers.SerializerMethodField()
-    aux_photo3_url = serializers.SerializerMethodField()
     is_favorite = serializers.SerializerMethodField()
     related_fabrics = serializers.SerializerMethodField()
     product_category_name = serializers.CharField(source="product_category.name")
+    color_images = FabricColorImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Fabric
         exclude = [
-            "photo",
-            "aux_photo1",
-            "aux_photo2",
-            "aux_photo3",
             "product_category",
         ]
-
-    def get_photo_url(self, obj):
-        if obj.photo and obj.photo.file:
-            return obj.photo.file.url
-        return None
-
-    def get_aux_photo1_url(self, obj):
-        if obj.aux_photo1 and obj.aux_photo1.file:
-            return obj.aux_photo1.file.url
-        return None
-
-    def get_aux_photo2_url(self, obj):
-        if obj.aux_photo2 and obj.aux_photo2.file:
-            return obj.aux_photo2.file.url
-        return None
-
-    def get_aux_photo3_url(self, obj):
-        if obj.aux_photo3 and obj.aux_photo3.file:
-            return obj.aux_photo3.file.url
-        return None
 
     def get_is_favorite(self, obj):
         user = self.context.get("request").user
