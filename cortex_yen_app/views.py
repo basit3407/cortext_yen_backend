@@ -12,7 +12,7 @@ from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
 from drf_yasg import openapi
 
-from .filters import BlogFilter
+from .filters import BlogFilter, FabricFilter
 from .pagination import CustomPagination
 from .models import (
     Blog,
@@ -420,8 +420,11 @@ fabric_pagination_schema = openapi.Schema(
 
 
 class FabricListAPIView(generics.ListAPIView):
+    queryset = Fabric.objects.all()
     serializer_class = FabricSerializer
     pagination_class = CustomPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = FabricFilter
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -434,7 +437,7 @@ class FabricListAPIView(generics.ListAPIView):
             openapi.Parameter(
                 "sort_by",
                 openapi.IN_QUERY,
-                description="Sort by 'newest' or 'oldest'",
+                description='Sort by "newest" or "oldest"',
                 type=openapi.TYPE_STRING,
                 enum=["newest", "oldest"],
             ),
@@ -444,6 +447,12 @@ class FabricListAPIView(generics.ListAPIView):
                 description="Filter by colors",
                 type=openapi.TYPE_ARRAY,
                 items=openapi.Items(type=openapi.TYPE_STRING),
+            ),
+            openapi.Parameter(
+                "item_code",
+                openapi.IN_QUERY,
+                description="Filter by item code",
+                type=openapi.TYPE_STRING,
             ),
             openapi.Parameter(
                 "page",
@@ -456,52 +465,7 @@ class FabricListAPIView(generics.ListAPIView):
         responses={200: fabric_pagination_schema},
     )
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def get_queryset(self):
-        queryset = Fabric.objects.all()
-        keyword = self.request.GET.get("keyword", "").lower()
-        sort_by = self.request.GET.get("sort_by", "newest")
-        colors = self.request.GET.getlist("colors", [])
-
-        # Apply filters based on keyword
-        if keyword:
-            if "best_selling" in keyword:
-                queryset = Fabric.objects.annotate(
-                    num_orders=Count("orderitem")
-                ).order_by("-num_orders")
-            elif "hot_selling" in keyword:
-                queryset = queryset.filter(is_hot_selling=True)
-            else:
-                category = ProductCategory.objects.filter(
-                    name__icontains=keyword
-                ).first()
-                if category:
-                    queryset = queryset.filter(product_category=category)
-                else:
-                    queryset = queryset.filter(title__icontains=keyword)
-
-        # Apply sorting
-        if sort_by == "newest":
-            queryset = queryset.order_by("-created_at")
-        elif sort_by == "oldest":
-            queryset = queryset.order_by("created_at")
-
-        # Apply color filters with OR condition
-        if colors:
-            color_query = Q()
-            for color in colors:
-                color_query |= Q(available_colors__contains=[color])
-            queryset = queryset.filter(color_query)
-
-        return queryset
+        return super().get(request, *args, **kwargs)
 
 
 class FabricDetailAPIView(generics.RetrieveAPIView):
