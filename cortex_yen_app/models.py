@@ -54,6 +54,11 @@ class CustomUser(AbstractUser):
 class ProductCategory(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
+    image = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        default=69,  # Set the default to the ID of the MediaUploads instance created in the admin panel
+    )
 
     def __str__(self):
         return self.name

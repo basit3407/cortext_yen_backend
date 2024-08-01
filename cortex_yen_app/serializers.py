@@ -27,8 +27,6 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import SetPasswordForm
 
-logger = logging.getLogger(__name__)
-
 
 class FileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -93,7 +91,7 @@ class UserSerializer(serializers.ModelSerializer):
         try:
             send_mail(subject, message, from_email, recipient_list)
         except Exception as e:
-            logger.error(f"Failed to send email, error: {str(e)}")
+            print(f"Failed to send email, error: {str(e)}")
             raise
 
 
@@ -125,9 +123,16 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductCategory
-        fields = ["id", "name", "description"]
+        fields = ["id", "name", "description", "image_url"]
+
+    def get_image_url(self, obj):
+        if obj.image:
+            return obj.image.file.url
+        return None
 
 
 class ContactFormSerializer(serializers.Serializer):
