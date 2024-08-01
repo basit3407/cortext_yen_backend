@@ -29,7 +29,7 @@ class FabricFilter(filters.FilterSet):
             "oldest": "Oldest",
             "most_requested": "Most Requested",
         },
-        label="Sort by",
+        label="sort by",
     )
     colors = filters.BaseInFilter(field_name="available_colors", lookup_expr="contains")
     item_code = filters.CharFilter(field_name="item_code", lookup_expr="icontains")
