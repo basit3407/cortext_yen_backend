@@ -133,7 +133,9 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    fabric = models.ForeignKey(Fabric, on_delete=models.CASCADE)
+    fabric = models.ForeignKey(
+        Fabric, on_delete=models.CASCADE, related_name="orderitem_set"
+    )
     color = models.CharField(max_length=100)
     quantity = models.PositiveIntegerField()
 
