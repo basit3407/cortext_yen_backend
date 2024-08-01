@@ -552,9 +552,11 @@ class FavoriteFabricsListView(generics.ListAPIView):
         elif sort_by == "oldest":
             queryset = queryset.order_by("fabric__created_at")
 
-        # Apply color filters based on fabric attributes
+        # Apply color filters based on related FabricColorImage objects
         if colors:
-            queryset = queryset.filter(fabric__available_colors__overlap=colors)
+            queryset = queryset.filter(
+                fabric__color_images__color__in=colors
+            ).distinct()
 
         return queryset
 

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from .models import (
     Blog,
     BlogCategory,
@@ -29,10 +30,20 @@ class FabricAdmin(admin.ModelAdmin):
     search_fields = ("title", "product_category__name", "item_code")
 
     def save_model(self, request, obj, form, change):
-        # Call the custom validation method
-        obj.clean()
-        # Save the object if validation passes
+        # Save the object first without validation
         super().save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        # Save the related objects first
+        super().save_related(request, form, formsets, change)
+        # Perform the validation after saving related objects
+        try:
+            form.instance.validate_color_images()
+        except ValidationError as e:
+            # Delete the main object if validation fails
+            form.instance.delete()
+            # Raise the validation error to display it in the admin
+            raise ValidationError(e)
 
 
 class OrderItemInline(admin.TabularInline):
