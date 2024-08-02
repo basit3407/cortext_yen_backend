@@ -1,10 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django_ckeditor_5.fields import CKEditor5Field
 from django.utils.crypto import get_random_string
 from .validators import validate_colors
+from django.core.validators import RegexValidator
 
 
 class MediaUploads(models.Model):
@@ -15,7 +15,7 @@ class FabricColorImage(models.Model):
     fabric = models.ForeignKey(
         "Fabric", on_delete=models.CASCADE, related_name="color_images"
     )
-    color = models.CharField(max_length=50)
+    color = models.CharField(max_length=50, validators=[validate_colors])
     primary_image = models.ForeignKey(
         MediaUploads,
         on_delete=models.DO_NOTHING,
@@ -91,9 +91,7 @@ class ProductCategory(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     image = models.ForeignKey(
-        MediaUploads,
-        on_delete=models.DO_NOTHING,
-        default=69,  # Set the default to the ID of the MediaUploads instance created in the admin panel
+        MediaUploads, on_delete=models.SET_NULL, blank=True, null=True
     )
 
     def __str__(self):
@@ -107,7 +105,17 @@ class Fabric(models.Model):
     composition = models.CharField(max_length=255)
     weight = models.CharField(max_length=100)
     finish = models.CharField(max_length=100)
-    item_code = models.CharField(max_length=100, unique=True)
+    item_code = models.CharField(
+        max_length=100,
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[a-zA-Z0-9]*$",
+                message="Item code must contain only letters and numbers.",
+                code="invalid_item_code",
+            )
+        ],
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     is_hot_selling = models.BooleanField(default=False)
 

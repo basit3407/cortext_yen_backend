@@ -20,8 +20,8 @@ class FabricFilter(filters.FilterSet):
     keyword = filters.CharFilter(method="filter_by_keyword")
     sort_by = filters.OrderingFilter(
         fields=(
-            ("created_at", "newest"),
-            ("-created_at", "oldest"),
+            ("created_at", "oldest"),
+            ("-created_at", "newest"),
             ("num_orders", "most_requested"),
         ),
         field_labels={

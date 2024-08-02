@@ -19,9 +19,8 @@ def validate_colors(value):
         "pink",
     ]  # Add more if needed
 
-    for color in value:
-        color = color.strip()
-        if not (
-            hex_pattern.match(color) or rgb_pattern.match(color) or color in color_names
-        ):
-            raise ValidationError(f"{color} is not a valid color")
+    color = value.strip()
+    if not (
+        hex_pattern.match(color) or rgb_pattern.match(color) or color in color_names
+    ):
+        raise ValidationError(f"{color} is not a valid color")
