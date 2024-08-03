@@ -116,7 +116,7 @@ class UserLoginSerializer(serializers.Serializer):
         return attrs
 
 
-class UserSerializer(serializers.ModelSerializer):
+class RetreveUpdateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = [

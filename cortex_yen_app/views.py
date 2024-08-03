@@ -40,8 +40,8 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     ProductCategorySerializer,
+    RetreveUpdateUserSerializer,
     SubscriptionSerializer,
-    UserSerializer,
     UserLoginSerializer,
     UserSerializer,
 )
@@ -800,7 +800,7 @@ class CartItemViewSet(viewsets.ModelViewSet):
         cart = get_object_or_404(Cart, user=user)
         cart_items = CartItem.objects.filter(cart=cart)
 
-        user_data = UserSerializer(user).data
+        user_data = RetreveUpdateUserSerializer(user).data
         cart_items_data = CartItemSerializer(
             cart_items, many=True, context={"request": request}
         ).data
@@ -918,7 +918,7 @@ class ContactRequestListCreateAPIView(
 
         serializer = self.get_serializer(queryset, many=True)
 
-        user_serializer = UserSerializer(request.user)
+        user_serializer = RetreveUpdateUserSerializer(request.user)
 
         response_data = {
             "user": user_serializer.data,
@@ -960,7 +960,7 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
 
-        user_serializer = UserSerializer(request.user)
+        user_serializer = RetreveUpdateUserSerializer(request.user)
 
         response_data = {
             "user": user_serializer.data,
@@ -975,15 +975,15 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
 
 class UserAPIView(RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = UserSerializer
+    serializer_class = RetreveUpdateUserSerializer
 
     def get_object(self):
         return self.request.user
 
     @swagger_auto_schema(
-        request_body=UserSerializer,
+        request_body=RetreveUpdateUserSerializer,
         responses={
-            200: UserSerializer,
+            200: RetreveUpdateUserSerializer,
             400: "Invalid data",
             401: "Unauthorized",
         },
@@ -998,7 +998,7 @@ class UserAPIView(RetrieveUpdateAPIView):
 
     @swagger_auto_schema(
         responses={
-            200: UserSerializer,
+            200: RetreveUpdateUserSerializer,
             401: "Unauthorized",
         }
     )
