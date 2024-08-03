@@ -5,10 +5,8 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
-from django.http import HttpResponseRedirect
-from django.db.models import Count, Q
+from django.db.models import Count
 from drf_yasg.utils import swagger_auto_schema
-from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
 from drf_yasg import openapi
 
@@ -45,14 +43,13 @@ from .serializers import (
     SubscriptionSerializer,
     UserSerializer,
     UserLoginSerializer,
-    UserUpdateSerializer,
+    UserSerializer,
 )
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from google.auth.transport import requests
 from google.oauth2 import id_token
-from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -68,6 +65,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.generics import RetrieveUpdateAPIView
 
 
 class GoogleLoginAPIView(APIView):
@@ -802,7 +800,7 @@ class CartItemViewSet(viewsets.ModelViewSet):
         cart = get_object_or_404(Cart, user=user)
         cart_items = CartItem.objects.filter(cart=cart)
 
-        user_data = UserUpdateSerializer(user).data
+        user_data = UserSerializer(user).data
         cart_items_data = CartItemSerializer(
             cart_items, many=True, context={"request": request}
         ).data
@@ -920,7 +918,7 @@ class ContactRequestListCreateAPIView(
 
         serializer = self.get_serializer(queryset, many=True)
 
-        user_serializer = UserUpdateSerializer(request.user)
+        user_serializer = UserSerializer(request.user)
 
         response_data = {
             "user": user_serializer.data,
@@ -962,7 +960,7 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
 
-        user_serializer = UserUpdateSerializer(request.user)
+        user_serializer = UserSerializer(request.user)
 
         response_data = {
             "user": user_serializer.data,
@@ -975,24 +973,39 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
         return ContactRequest.objects.filter(user=self.request.user)
 
 
-class UserUpdateAPIView(APIView):
+class UserAPIView(RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        return self.request.user
 
     @swagger_auto_schema(
-        request_body=UserUpdateSerializer,
+        request_body=UserSerializer,
         responses={
-            200: UserUpdateSerializer,
+            200: UserSerializer,
             400: "Invalid data",
             401: "Unauthorized",
         },
     )
-    def patch(self, request):
-        user = request.user
-        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+    def patch(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        responses={
+            200: UserSerializer,
+            401: "Unauthorized",
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ContactDetailsView(APIView):

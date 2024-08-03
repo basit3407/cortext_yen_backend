@@ -20,7 +20,6 @@ from .models import (
 )
 from django.core.mail import send_mail
 from django.conf import settings
-import logging
 from rest_framework.exceptions import ValidationError
 from django.utils.http import urlsafe_base64_decode as uid_decoder
 from django.utils.encoding import force_str
@@ -117,10 +116,18 @@ class UserLoginSerializer(serializers.Serializer):
         return attrs
 
 
-class UserUpdateSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["name", "company_name", "address", "phone", "mobile_phone", "email"]
+        fields = [
+            "name",
+            "company_name",
+            "address",
+            "phone",
+            "mobile_phone",
+            "email",
+            "is_verified",
+        ]
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):

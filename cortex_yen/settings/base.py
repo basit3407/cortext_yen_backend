@@ -221,9 +221,3 @@ CKEDITOR_5_CONFIGS = {
         },
     }
 }
-
-
-from django.db import transaction
-
-OLD_BUCKET_URL = "https://corleebe.s3.ap-southeast-1.amazonaws.com/corlee/uploads/"
-NEW_CLOUDFRONT_URL = "https://d1emfok2hfg9f.cloudfront.net/corlee/uploads/"
