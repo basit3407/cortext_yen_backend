@@ -1,6 +1,10 @@
 from django.core.management.base import BaseCommand
-from cortex_yen_app.models import MediaUploads
+from cortex_yen_app.models import (
+    MediaUploads,
+)
 import re
+import boto3
+from botocore.exceptions import ClientError
 
 
 class Command(BaseCommand):
@@ -10,16 +14,30 @@ class Command(BaseCommand):
         # Regex pattern to match the old image extensions
         pattern = re.compile(r"\.(jpeg|png|jpg|jfif)$", re.IGNORECASE)
 
+        # Initialize the S3 client
+        s3 = boto3.client("s3")
+
         # Get all instances of the MediaUploads model
         instances = MediaUploads.objects.all()
 
         for instance in instances:
             if instance.file:
-                # Replace the old extensions with .webp
-                new_url = pattern.sub(".webp", instance.file.url)
-                # Use instance.file.name to update the field
-                instance.file.name = new_url
-                instance.save()
-                self.stdout.write(self.style.SUCCESS(f"Updated URL for {instance}"))
+                old_url = instance.file.url
+                new_url = pattern.sub(".webp", old_url)
 
-        self.stdout.write(self.style.SUCCESS("All image URLs updated successfully"))
+                # Parse the bucket name and object key from the URL
+                bucket_name = "corleeandcobackend"
+                old_key = old_url.split(bucket_name + "/")[1]
+                new_key = new_url.split(bucket_name + "/")[1]
+
+                try:
+                    # Check if the new file exists in S3
+                    s3.head_object(Bucket=bucket_name, Key=new_key)
+                    # Update the field if the file exists
+                    instance.file.name = new_key
+                    instance.save()
+                    self.stdout.write(self.style.SUCCESS(f"Updated URL for {instance}"))
+                except ClientError:
+                    self.stdout.write(self.style.ERROR(f"File not found: {new_url}"))
+
+        self.stdout.write(self.style.SUCCESS("All image URLs processed"))
