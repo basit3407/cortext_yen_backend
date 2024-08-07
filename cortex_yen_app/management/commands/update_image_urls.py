@@ -1,10 +1,9 @@
 from django.core.management.base import BaseCommand
-from cortex_yen_app.models import (
-    MediaUploads,
-)
+from cortex_yen_app.models import MediaUploads
 import re
 import boto3
 from botocore.exceptions import ClientError
+from urllib.parse import urlparse
 
 
 class Command(BaseCommand):
@@ -23,12 +22,22 @@ class Command(BaseCommand):
         for instance in instances:
             if instance.file:
                 old_url = instance.file.url
-                new_url = pattern.sub(".webp", old_url)
 
-                # Parse the bucket name and object key from the URL
+                # Parse the old URL to extract bucket name and object key
+                parsed_url = urlparse(old_url)
                 bucket_name = "corleeandcobackend"
-                old_key = old_url.split(bucket_name + "/")[1]
-                new_key = new_url.split(bucket_name + "/")[1]
+                old_key = parsed_url.path.lstrip("/")
+
+                # Construct new key
+                new_key = pattern.sub(".webp", old_key)
+                new_url = f"https://{parsed_url.netloc}/{new_key}"
+
+                # Debugging outputs
+                self.stdout.write(self.style.NOTICE(f"Old URL: {old_url}"))
+                self.stdout.write(self.style.NOTICE(f"New URL: {new_url}"))
+                self.stdout.write(self.style.NOTICE(f"Bucket Name: {bucket_name}"))
+                self.stdout.write(self.style.NOTICE(f"Old Key: {old_key}"))
+                self.stdout.write(self.style.NOTICE(f"New Key: {new_key}"))
 
                 try:
                     # Check if the new file exists in S3
@@ -36,8 +45,14 @@ class Command(BaseCommand):
                     # Update the field if the file exists
                     instance.file.name = new_key
                     instance.save()
-                    self.stdout.write(self.style.SUCCESS(f"Updated URL for {instance}"))
-                except ClientError:
-                    self.stdout.write(self.style.ERROR(f"File not found: {new_url}"))
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Updated URL for {instance} from {old_url} to {new_url}"
+                        )
+                    )
+                except ClientError as e:
+                    self.stdout.write(
+                        self.style.ERROR(f"File not found: {new_url}, Error: {e}")
+                    )
 
         self.stdout.write(self.style.SUCCESS("All image URLs processed"))
