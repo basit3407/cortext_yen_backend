@@ -5,10 +5,32 @@ from django_ckeditor_5.fields import CKEditor5Field
 from django.utils.crypto import get_random_string
 from .validators import validate_colors
 from django.core.validators import RegexValidator
+from PIL import Image
+import os
+from django.core.files.base import ContentFile
+from io import BytesIO
 
 
 class MediaUploads(models.Model):
     file = models.FileField(upload_to="corlee/uploads/", max_length=255)
+
+    def save(self, *args, **kwargs):
+        # Open the uploaded image
+        img = Image.open(self.file)
+
+        # Initialize output buffer
+        output = BytesIO()
+
+        # Always convert and optimize the image
+        img.save(output, format="WEBP", quality=85)
+        output.seek(0)
+
+        # Change the file field to the new image
+        self.file = ContentFile(
+            output.read(), name=os.path.splitext(self.file.name)[0] + ".webp"
+        )
+
+        super().save(*args, **kwargs)
 
 
 class FabricColorImage(models.Model):
