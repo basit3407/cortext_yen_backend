@@ -11,7 +11,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # Regex pattern to match the old image extensions
-        pattern = re.compile(r"\.(jpeg|png|jpg|jfif)$", re.IGNORECASE)
+        pattern = re.compile(r"\.(jpeg|png|jpg|jfif|avif)$", re.IGNORECASE)
 
         # Initialize the S3 client
         s3 = boto3.client("s3")
