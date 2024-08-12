@@ -263,6 +263,24 @@ class CartItem(models.Model):
 
 
 class ContactRequest(models.Model):
+
+    STATUS_CHOICES = [
+        ("new", "New"),
+        ("in_progress", "In Progress"),
+        ("resolved", "Resolved"),
+        ("closed", "Closed"),
+        ("pending", "Pending"),
+    ]
+
+    ORDER_STATUS_CHOICES = [
+        ("new", "New"),
+        ("processing", "Processing"),
+        ("dispatched", "Dispatched"),
+        ("delivered", "Delivered"),
+        ("cancelled", "Cancelled"),
+        ("returned", "Returned"),
+    ]
+
     REQUEST_TYPE_CHOICES = [
         ("general", "General Inquiry"),
         ("product", "Product Inquiry"),
@@ -289,8 +307,17 @@ class ContactRequest(models.Model):
         Order, null=True, blank=True, on_delete=models.CASCADE
     )
 
+    current_status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="new"
+    )
+    order_status = models.CharField(
+        max_length=20, choices=ORDER_STATUS_CHOICES, default="new"
+    )
+
     def __str__(self):
-        return f"Request {self.request_number} by {self.user.username}"
+        if self.user:
+            return f"Request {self.request_number} by {self.user.username}"
+        return f"Request {self.request_number} (No User)"
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None

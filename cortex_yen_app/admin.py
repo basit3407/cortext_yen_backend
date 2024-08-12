@@ -72,7 +72,6 @@ admin.site.register(ProductCategory)
 admin.site.register(Fabric, FabricAdmin)
 admin.site.register(Cart)
 admin.site.register(Favorite)
-admin.site.register(ContactRequest)
 admin.site.register(BlogCategory)
 admin.site.register(ContactDetails)
 admin.site.register(Subscription)
@@ -87,3 +86,54 @@ admin.site.register(MediaUploads)
 class FabricColorImageAdmin(admin.ModelAdmin):
     list_display = ("fabric", "color")
     search_fields = ("fabric__title", "color")
+
+
+from django.contrib import admin
+from .models import ContactRequest
+
+
+class ContactRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "request_number",
+        "user",
+        "request_type",
+        "current_status_or_order_status",
+        "created_at",
+    )
+
+    list_filter = ("request_type", "current_status", "order_status")
+
+    def get_form(self, request, obj=None, **kwargs):
+        """
+        Override get_form to customize the fields based on request_type.
+        """
+        form = super(ContactRequestAdmin, self).get_form(request, obj, **kwargs)
+        if obj:  # When editing an existing object
+            if obj.request_type == "product_request":
+                # Show order_status, hide current_status
+                form.base_fields["order_status"].required = True
+                form.base_fields["current_status"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+            else:
+                # Show current_status, hide order_status
+                form.base_fields["order_status"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+                form.base_fields["current_status"].required = True
+        return form
+
+    def current_status_or_order_status(self, obj):
+        """
+        Display the correct status field based on the request_type.
+        """
+        if obj.request_type == "product_request":
+            return obj.order_status
+        return obj.current_status
+
+    current_status_or_order_status.short_description = "Status"
+
+    current_status_or_order_status.short_description = "Status"
+
+
+admin.site.register(ContactRequest, ContactRequestAdmin)
