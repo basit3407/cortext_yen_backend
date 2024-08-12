@@ -1,3 +1,4 @@
+from wsgiref.validate import validator
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -34,10 +35,11 @@ class MediaUploads(models.Model):
 
 
 class FabricColorCategory(models.Model):
-    category = models.CharField(max_length=255)
+    color = models.CharField(max_length=255, validators=[validate_colors])
+    display_name = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.category
+        return self.display_name
 
 
 class FabricColorImage(models.Model):
