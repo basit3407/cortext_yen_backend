@@ -423,10 +423,18 @@ class CartItemSerializer(serializers.ModelSerializer):
 class ContactRequestSerializer(serializers.ModelSerializer):
     related_fabric = FabricSerializer(read_only=True)
     related_order = OrderSerializer(read_only=True)
+    status = serializers.SerializerMethodField()
+
+    def get_status(self, obj: ContactRequest):
+
+        if obj.request_type == "product_request":
+            return obj.order_status
+
+        return obj.current_status
 
     class Meta:
         model = ContactRequest
-        exclude = ["user"]
+        exclude = ["user", "current_status", "order_status"]
 
 
 class ContactDetailsSerializer(serializers.ModelSerializer):
