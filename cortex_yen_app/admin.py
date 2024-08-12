@@ -146,9 +146,16 @@ class ContactRequestAdmin(admin.ModelAdmin):
                 form.base_fields["related_fabric"].widget = (
                     admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
                 )
+                form.base_fields["order_status"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+
             elif obj.request_type == "product":
                 # Hide related_order
                 form.base_fields["related_order"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+                form.base_fields["order_status"].widget = (
                     admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
                 )
                 # Show related_fabric
@@ -156,6 +163,9 @@ class ContactRequestAdmin(admin.ModelAdmin):
             elif obj.request_type == "product_request":
                 # Hide related_fabric
                 form.base_fields["related_fabric"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+                form.base_fields["current_status"].widget = (
                     admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
                 )
                 # Show related_order
