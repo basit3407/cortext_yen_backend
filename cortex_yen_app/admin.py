@@ -77,7 +77,6 @@ admin.site.register(Fabric, FabricAdmin)
 admin.site.register(Cart)
 admin.site.register(Favorite)
 admin.site.register(BlogCategory)
-admin.site.register(FabricColorCategory)
 admin.site.register(ContactDetails)
 admin.site.register(Subscription)
 # admin.site.register(Order)
@@ -85,6 +84,16 @@ admin.site.register(Subscription)
 admin.site.register(Event)
 admin.site.register(Blog)
 admin.site.register(MediaUploads)
+
+
+class FabricColorCategoryAdmin(admin.ModelAdmin):
+    def save_model(self, request, obj, form, change):
+        if not obj.color:
+            raise ValidationError("Color field cannot be empty.")
+        super().save_model(request, obj, form, change)
+
+
+admin.site.register(FabricColorCategory, FabricColorCategoryAdmin)
 
 
 class CustomUserAdmin(admin.ModelAdmin):

@@ -457,4 +457,4 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class FabricColorCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = FabricColorCategory
-        fields = ["id", "category"]
+        fields = "__all__"
