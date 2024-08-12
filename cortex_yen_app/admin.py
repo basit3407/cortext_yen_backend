@@ -87,13 +87,20 @@ admin.site.register(MediaUploads)
 
 class CustomUserAdmin(admin.ModelAdmin):
     # Fields to display in the list view
-    list_display = ("username", "name", "email", "is_verified", "company_name")
+    list_display = (
+        "username",
+        "name",
+        "email",
+        "is_verified",
+        "company_name",
+        "is_superuser",
+    )
 
     # Fields to search by
     search_fields = ("username", "name", "email")
 
     # Filters available in the sidebar
-    list_filter = ("is_verified", "auth_method")
+    list_filter = ("is_verified", "auth_method", "is_superuser")
 
     # Allows filtering by specific fields in the list view
     ordering = ("username",)
