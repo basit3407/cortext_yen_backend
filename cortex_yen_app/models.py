@@ -1,3 +1,4 @@
+from unicodedata import category
 from wsgiref.validate import validator
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -35,7 +36,6 @@ class MediaUploads(models.Model):
 
 
 class FabricColorCategory(models.Model):
-    color = models.CharField(max_length=255, validators=[validate_colors])
     display_name = models.CharField(max_length=255)
 
     def __str__(self):
