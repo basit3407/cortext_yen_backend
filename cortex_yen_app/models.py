@@ -37,6 +37,9 @@ class MediaUploads(models.Model):
 
 class FabricColorCategory(models.Model):
     display_name = models.CharField(max_length=255)
+    color = models.CharField(
+        max_length=255, validators=[validate_colors], blank=True, null=True
+    )
 
     def __str__(self):
         return self.display_name
