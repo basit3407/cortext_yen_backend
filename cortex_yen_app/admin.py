@@ -8,6 +8,7 @@ from .models import (
     ContactDetails,
     CustomUser,
     Event,
+    FabricColorCategory,
     FabricColorImage,
     ProductCategory,
     Fabric,
@@ -76,6 +77,7 @@ admin.site.register(Fabric, FabricAdmin)
 admin.site.register(Cart)
 admin.site.register(Favorite)
 admin.site.register(BlogCategory)
+admin.site.register(FabricColorCategory)
 admin.site.register(ContactDetails)
 admin.site.register(Subscription)
 # admin.site.register(Order)
