@@ -127,6 +127,11 @@ class ContactRequestAdmin(admin.ModelAdmin):
 
     list_filter = ("request_type", "current_status", "order_status")
 
+    search_fields = (
+        "request_number",  # For searching by request_number
+        "user__username",  # For searching by username (assuming user is a ForeignKey to a User model with a 'username' field)
+    )
+
     def get_form(self, request, obj=None, **kwargs):
         """
         Override get_form to customize the fields based on request_type.

@@ -893,7 +893,7 @@ def checkout(request):
 
         # Prepare email content
         user_email_subject = "Checkout Successful"
-        user_email_message = f"Dear {request.user.username},\n\nYour checkout was successful. Your request number is {contact_request.request_number}.\n\nThank you for shopping with us!"
+        user_email_message = f"Dear {request.user.name},\n\nYour checkout was successful. Your request number is {contact_request.request_number}.\n\nThank you for shopping with us!"
         admin_email_subject = "New Checkout Order"
         admin_email_message = f"A new checkout has been processed.\n\nUser: {request.user.username}\nRequest Number: {contact_request.request_number}\nOrder Details: {order_data}"
 
