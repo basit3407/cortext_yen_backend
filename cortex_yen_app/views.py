@@ -891,6 +891,30 @@ def checkout(request):
         # Clear the cart
         cart_items.delete()
 
+        # Prepare email content
+        user_email_subject = "Checkout Successful"
+        user_email_message = f"Dear {request.user.username},\n\nYour checkout was successful. Your request number is {contact_request.request_number}.\n\nThank you for shopping with us!"
+        admin_email_subject = "New Checkout Order"
+        admin_email_message = f"A new checkout has been processed.\n\nUser: {request.user.username}\nRequest Number: {contact_request.request_number}\nOrder Details: {order_data}"
+
+        # Send email to user
+        send_mail(
+            user_email_subject,
+            user_email_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [request.user.email],
+            fail_silently=False,
+        )
+
+        # Send email to admin
+        send_mail(
+            admin_email_subject,
+            admin_email_message,
+            settings.DEFAULT_FROM_EMAIL,
+            ["corleeandco@gmail.com"],
+            fail_silently=False,
+        )
+
         return Response(
             {
                 "request_number": contact_request.request_number,
