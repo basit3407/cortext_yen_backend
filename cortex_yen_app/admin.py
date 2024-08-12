@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from .models import (
     Blog,
     BlogCategory,
@@ -54,6 +56,8 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ("get_customer_name", "get_customer_email", "order_date")
+    readonly_fields = ("order_date",)
+
     inlines = [OrderItemInline]
 
     def get_customer_name(self, obj):
@@ -62,7 +66,7 @@ class OrderAdmin(admin.ModelAdmin):
     get_customer_name.short_description = "Customer Name"
 
     def get_customer_email(self, obj):
-        return obj.user.email
+        return obj.user.email if obj.user else "No email"
 
     get_customer_email.short_description = "Customer Email"
 
@@ -88,10 +92,6 @@ class FabricColorImageAdmin(admin.ModelAdmin):
     search_fields = ("fabric__title", "color")
 
 
-from django.contrib import admin
-from .models import ContactRequest
-
-
 class ContactRequestAdmin(admin.ModelAdmin):
     list_display = (
         "request_number",
@@ -109,18 +109,52 @@ class ContactRequestAdmin(admin.ModelAdmin):
         """
         form = super(ContactRequestAdmin, self).get_form(request, obj, **kwargs)
         if obj:  # When editing an existing object
-            if obj.request_type == "product_request":
-                # Show order_status, hide current_status
-                form.base_fields["order_status"].required = True
-                form.base_fields["current_status"].widget = (
+            if obj.request_type == "general":
+                # Hide related_order and related_fabric
+                form.base_fields["related_order"].widget = (
                     admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
                 )
-            else:
-                # Show current_status, hide order_status
-                form.base_fields["order_status"].widget = (
+                form.base_fields["related_fabric"].widget = (
                     admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
                 )
-                form.base_fields["current_status"].required = True
+            elif obj.request_type == "product":
+                # Hide related_order
+                form.base_fields["related_order"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+                # Show related_fabric
+                form.base_fields["related_fabric"].required = True
+            elif obj.request_type == "product_request":
+                # Hide related_fabric
+                form.base_fields["related_fabric"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+                # Show related_order
+                form.base_fields["related_order"].required = True
+        else:  # When creating a new object
+            request_type = request.GET.get("request_type")
+            if request_type == "general":
+                # Hide related_order and related_fabric
+                form.base_fields["related_order"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+                form.base_fields["related_fabric"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+            elif request_type == "product":
+                # Hide related_order
+                form.base_fields["related_order"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+                # Show related_fabric
+                form.base_fields["related_fabric"].required = True
+            elif request_type == "product_request":
+                # Hide related_fabric
+                form.base_fields["related_fabric"].widget = (
+                    admin.widgets.AdminTextInputWidget(attrs={"type": "hidden"})
+                )
+                # Show related_order
+                form.base_fields["related_order"].required = True
         return form
 
     def current_status_or_order_status(self, obj):
@@ -133,7 +167,24 @@ class ContactRequestAdmin(admin.ModelAdmin):
 
     current_status_or_order_status.short_description = "Status"
 
-    current_status_or_order_status.short_description = "Status"
+    def save_model(self, request, obj, form, change):
+        if change:  # If the object is being updated
+            old_obj = ContactRequest.objects.get(pk=obj.pk)
+            if old_obj.current_status != obj.current_status:
+                self.send_status_update_email(obj, "current_status")
+            if old_obj.order_status != obj.order_status:
+                self.send_status_update_email(obj, "order_status")
+
+        super(ContactRequestAdmin, self).save_model(request, obj, form, change)
+
+    def send_status_update_email(self, obj, status_type):
+        subject = f"Your {status_type.replace('_', ' ')} has been updated"
+        message = f"Dear {obj.user.name},\n\nYour request's {status_type.replace('_', ' ')} has been updated to '{getattr(obj, status_type)}'.\n\nThank you!"
+        from_email = settings.DEFAULT_FROM_EMAIL
+
+        recipient_list = [obj.user.email]
+
+        send_mail(subject, message, from_email, recipient_list)
 
 
 admin.site.register(ContactRequest, ContactRequestAdmin)
