@@ -71,7 +71,6 @@ class OrderAdmin(admin.ModelAdmin):
     get_customer_email.short_description = "Customer Email"
 
 
-admin.site.register(CustomUser)
 admin.site.register(ProductCategory)
 admin.site.register(Fabric, FabricAdmin)
 admin.site.register(Cart)
@@ -84,6 +83,24 @@ admin.site.register(Subscription)
 admin.site.register(Event)
 admin.site.register(Blog)
 admin.site.register(MediaUploads)
+
+
+class CustomUserAdmin(admin.ModelAdmin):
+    # Fields to display in the list view
+    list_display = ("username", "name", "email", "is_verified", "company_name")
+
+    # Fields to search by
+    search_fields = ("username", "name", "email")
+
+    # Filters available in the sidebar
+    list_filter = ("is_verified", "auth_method")
+
+    # Allows filtering by specific fields in the list view
+    ordering = ("username",)
+
+
+# Register the CustomUserAdmin with the CustomUser model
+admin.site.register(CustomUser, CustomUserAdmin)
 
 
 @admin.register(FabricColorImage)
