@@ -33,9 +33,19 @@ class MediaUploads(models.Model):
         super().save(*args, **kwargs)
 
 
+class FabricColorCategory(models.Model):
+    category = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.category
+
+
 class FabricColorImage(models.Model):
     fabric = models.ForeignKey(
         "Fabric", on_delete=models.CASCADE, related_name="color_images"
+    )
+    color_category = models.ForeignKey(
+        FabricColorCategory, related_name="colors", on_delete=models.SET_NULL, null=True
     )
     color = models.CharField(max_length=50, validators=[validate_colors])
     primary_image = models.ForeignKey(

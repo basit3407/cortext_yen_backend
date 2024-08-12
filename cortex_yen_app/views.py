@@ -22,6 +22,7 @@ from .models import (
     CustomUser,
     Event,
     Fabric,
+    FabricColorCategory,
     Favorite,
     ProductCategory,
 )
@@ -34,6 +35,7 @@ from .serializers import (
     ContactFormSerializer,
     ContactRequestSerializer,
     EventSerializer,
+    FabricColorCategorySerializer,
     FabricSerializer,
     FavoriteSerializer,
     OrderSerializer,
@@ -1029,3 +1031,8 @@ class SubscriptionView(APIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FabricColorCategoryListView(generics.ListAPIView):
+    queryset = FabricColorCategory.objects.all()
+    serializer_class = FabricColorCategorySerializer

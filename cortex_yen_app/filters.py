@@ -1,6 +1,6 @@
 import django_filters
 from django_filters import rest_framework as filters
-from .models import Fabric, ProductCategory, Blog
+from .models import Fabric, ProductCategory, Blog, FabricColorCategory
 from django.db.models import Count, Q
 
 
@@ -33,10 +33,13 @@ class FabricFilter(filters.FilterSet):
     )
     colors = filters.BaseInFilter(method="filter_by_colors")
     item_code = filters.CharFilter(field_name="item_code", lookup_expr="icontains")
+    category = filters.NumberFilter(
+        field_name="color_images__color_category__id", lookup_expr="exact"
+    )
 
     class Meta:
         model = Fabric
-        fields = ["keyword", "sort_by", "colors", "item_code"]
+        fields = ["keyword", "sort_by", "colors", "item_code", "category"]
 
     def filter_by_keyword(self, queryset, name, value):
         value = value.lower()
@@ -57,10 +60,10 @@ class FabricFilter(filters.FilterSet):
         return queryset
 
     def filter_by_colors(self, queryset, name, value):
-        return queryset.filter(color_images__color__in=value)
-
-    def filter_queryset(self, queryset):
-        # Annotate the queryset with the number of orders
-        queryset = queryset.annotate(num_orders=Count("orderitem_set"))
-        # Apply the usual filter logic
-        return super().filter_queryset(queryset)
+        color_ids = FabricColorCategory.objects.filter(id__in=value).values_list(
+            "id", flat=True
+        )
+        queryset = queryset.filter(
+            color_images__color_category__in=color_ids
+        ).distinct()
+        return queryset

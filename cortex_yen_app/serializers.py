@@ -9,6 +9,7 @@ from .models import (
     CustomUser,
     Event,
     Fabric,
+    FabricColorCategory,
     FabricColorImage,
     Favorite,
     MediaUploads,
@@ -443,3 +444,9 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         if Subscription.objects.filter(email=value).exists():
             raise serializers.ValidationError("This email is already subscribed.")
         return value
+
+
+class FabricColorCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FabricColorCategory
+        fields = ["id", "category"]

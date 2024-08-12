@@ -14,6 +14,7 @@ from .views import (
     CustomPasswordResetView,
     EmailVerificationView,
     EventViewSet,
+    FabricColorCategoryListView,
     FabricDetailAPIView,
     FabricListAPIView,
     FavoriteFabricsListView,
@@ -87,4 +88,9 @@ urlpatterns = [
     ),
     path("user/", UserAPIView.as_view(), name="user-update"),
     path("subscribe/", SubscriptionView.as_view(), name="subscribe"),
+    path(
+        "color-categories/",
+        FabricColorCategoryListView.as_view(),
+        name="color-category-list",
+    ),
 ]
