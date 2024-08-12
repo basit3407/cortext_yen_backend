@@ -714,7 +714,7 @@ class ContactFormView(APIView):
                 related_fabric=fabric if request_type == "product" else None,
             )
 
-            # Send email
+            # Send email to admin
             email_subject = f"New {subject} from {name}"
             email_message = f"""
             Item Code: {item_code or 'N/A'}
@@ -731,13 +731,45 @@ class ContactFormView(APIView):
                     subject=email_subject,
                     message=email_message,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=["support@corleeandco.com"],
+                    recipient_list=["corleeandco@gmail.com", "corleeit@gmail.com"],
                 )
             except Exception as e:
                 return Response(
                     {"error": "Failed to send email. Please try again later."},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
+
+            # Send confirmation email to the user
+            user_email_subject = "We Have Received Your Request"
+            user_email_message = f"""
+            Dear {name},
+
+            Thank you for reaching out to us. We have received your request and will get back to you shortly.
+
+            Here are the details of your request:
+            Request Number: {contact_request.request_number}
+            Subject: {subject}
+            Description: {message}
+            Item Code: {item_code or 'N/A'}
+            Company Name: {company_name}
+            Sample Requested: {"Yes" if sample_requested else "No"}
+
+            If you have any further questions, please don't hesitate to contact us.
+
+            Best regards,
+            The Team
+            """
+
+            try:
+                send_mail(
+                    subject=user_email_subject,
+                    message=user_email_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                )
+            except Exception as e:
+                # Log the error if needed
+                pass  # You might want to handle this case too
 
             return Response(
                 {
