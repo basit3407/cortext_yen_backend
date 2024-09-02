@@ -213,6 +213,7 @@ class Event(models.Model):
         blank=True,
     )
     location = models.CharField(max_length=255)
+    url = models.URLField()
     email = models.EmailField()
     phone = models.CharField(max_length=20)
 
