@@ -913,17 +913,25 @@ def checkout(request):
         # Generate the HTML table for the email
         table_rows = format_html_join(
             "\n",
-            "<tr><td>{}</td><td><img src='{}' width='50' height='50'></td><td>{}</td><td>{}</td></tr>",
+            "<tr>"
+            "<td style='padding: 8px; text-align: left;'>{}</td>"  # S.No
+            "<td style='padding: 8px; text-align: left;'>{}</td>"  # Order Date
+            "<td style='padding: 8px; text-align: left;'>{}</td>"  # Item Code
+            "<td style='padding: 8px; text-align: left;'><img src='{}' width='50' height='50'></td>"  # Image
+            "<td style='padding: 8px; text-align: left;'>{}</td>"  # Title
+            "<td style='padding: 8px; text-align: left;'>{}</td>"  # Quantity
+            "</tr>",
             [
                 (
                     idx,
                     order.order_date.strftime("%Y-%m-%d"),
+                    item.fabric.item_code,
                     (
                         item.fabric.color_images.first().primary_image.file.url
                         if item.fabric.color_images.exists()
                         else ""
                     ),
-                    f"{item.fabric.title} - {item.color}",
+                    item.fabric.title,
                     item.quantity,
                 )
                 for idx, item in enumerate(cart_items, start=1)
@@ -935,11 +943,12 @@ def checkout(request):
             <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
                 <thead>
                     <tr>
-                        <th style="padding: 8px; text-align: left;">S.No</th>
-                        <th style="padding: 8px; text-align: left;">Order Date</th>
-                        <th style="padding: 8px; text-align: left;">Image</th>
-                        <th style="padding: 8px; text-align: left;">Description</th>
-                        <th style="padding: 8px; text-align: left;">Quantity (yards)</th>
+                        <th style="padding: 8px; text-align: left;'>S.No</th>
+                        <th style="padding: 8px; text-align: left;'>Order Date</th>
+                        <th style="padding: 8px; text-align: left;'>Item Code</th>
+                        <th style="padding: 8px; text-align: left;'>Image</th>
+                        <th style="padding: 8px; text-align: left;'>Title</th>
+                        <th style="padding: 8px; text-align: left;'>Quantity</th>
                     </tr>
                 </thead>
                 <tbody>
