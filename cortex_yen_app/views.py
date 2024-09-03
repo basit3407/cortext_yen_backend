@@ -937,7 +937,7 @@ def checkout(request):
                         <th style="padding: 8px; text-align: left;">S.No</th>
                         <th style="padding: 8px; text-align: left;">Image</th>
                         <th style="padding: 8px; text-align: left;">Description</th>
-                        <th style="padding: 8px; text-align: left;">Quantity</th>
+                        <th style="padding: 8px; text-align: left;">Quantity (yards)</th>
                     </tr>
                 </thead>
                 <tbody>
