@@ -918,7 +918,6 @@ def checkout(request):
             "<td style='padding: 8px; text-align: left;'>{}</td>"  # Order Date
             "<td style='padding: 8px; text-align: left;'>{}</td>"  # Item Code
             "<td style='padding: 8px; text-align: left;'><img src='{}' width='50' height='50'></td>"  # Image
-            "<td style='padding: 8px; text-align: left;'>{}</td>"  # Title
             "<td style='padding: 8px; text-align: left;'>{}</td>"  # Quantity
             "</tr>",
             [
@@ -931,7 +930,6 @@ def checkout(request):
                         if item.fabric.color_images.exists()
                         else ""
                     ),
-                    item.fabric.title,
                     item.quantity,
                 )
                 for idx, item in enumerate(cart_items, start=1)
@@ -947,7 +945,6 @@ def checkout(request):
                         <th style="padding: 8px; text-align: left;'>Order Date</th>
                         <th style="padding: 8px; text-align: left;'>Item Code</th>
                         <th style="padding: 8px; text-align: left;'>Image</th>
-                        <th style="padding: 8px; text-align: left;'>Title</th>
                         <th style="padding: 8px; text-align: left;'>Quantity</th>
                     </tr>
                 </thead>
