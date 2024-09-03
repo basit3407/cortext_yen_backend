@@ -923,7 +923,7 @@ def checkout(request):
         # Generate the HTML table for the email
         table_rows = format_html_join(
             "\n",
-            "<tr><td>{}</td><td>{}</td><td>{}</td><td><img src='{}' width='50' height='50'></td><td>{}</td><td>{}</td></tr>",
+            "<tr><td>{}</td><td>{}</td><td>{}</td><td><img src='{}' width='50' height='50'></td><td>{}</td></tr>",
             [
                 (
                     idx,
@@ -934,7 +934,6 @@ def checkout(request):
                         if item.fabric.color_images.exists()
                         else ""
                     ),
-                    contact_request.request_number,  # Request Number
                     item.quantity,
                 )
                 for idx, item in enumerate(cart_items, start=1)
@@ -950,7 +949,6 @@ def checkout(request):
                         <th style="padding: 8px; text-align: left;">Order Date</th>
                         <th style="padding: 8px; text-align: left;">Item Code</th>
                         <th style="padding: 8px; text-align: left;">Image</th>
-                        <th style="padding: 8px; text-align: left;">Request Number</th>
                         <th style="padding: 8px; text-align: left;">Quantity</th>
                     </tr>
                 </thead>
@@ -967,7 +965,8 @@ def checkout(request):
         user_email_message = format_html(
             f"""
             <p>Dear {request.user.name},</p>
-            <p>Thank you for your order. Below is the summary of your order:</p>
+            <p>Thank you for placing your order. Your request number to track this order is <strong>{contact_request.request_number}</strong>.</p>
+            <p>Below is the summary of your order:</p>
             {table_html}
             <p>We will process your order soon. Thank you for shopping with us!</p>
             """
