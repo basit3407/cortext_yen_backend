@@ -913,13 +913,7 @@ def checkout(request):
         # Generate the HTML table for the email
         table_rows = format_html_join(
             "\n",
-            "<tr>"
-            "<td style='padding: 8px; text-align: center;'>{}</td>"
-            "<td style='padding: 8px; text-align: center;'>{}</td>"
-            "<td style='padding: 8px; text-align: center;'><img src='{}' width='50' height='50'></td>"
-            "<td style='padding: 8px; text-align: center;'>{}</td>"
-            "<td style='padding: 8px; text-align: center;'>{}</td>"
-            "</tr>",
+            "<tr><td>{}</td><td><img src='{}' width='50' height='50'></td><td>{}</td><td>{}</td></tr>",
             [
                 (
                     idx,
@@ -938,14 +932,14 @@ def checkout(request):
 
         table_html = format_html(
             """
-            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
                 <thead>
                     <tr>
-                        <th style="padding: 8px; text-align: center;'>S.No</th>
-                        <th style="padding: 8px; text-align: center;'>Order Date</th>
-                        <th style="padding: 8px; text-align: center;'>Image</th>
-                        <th style="padding: 8px; text-align: center;'>Description</th>
-                        <th style="padding: 8px; text-align: center;'>Quantity (yards)</th>
+                        <th style="padding: 8px; text-align: left;">S.No</th>
+                        <th style="padding: 8px; text-align: left;">Order Date</th>
+                        <th style="padding: 8px; text-align: left;">Image</th>
+                        <th style="padding: 8px; text-align: left;">Description</th>
+                        <th style="padding: 8px; text-align: left;">Quantity (yards)</th>
                     </tr>
                 </thead>
                 <tbody>
