@@ -9,7 +9,7 @@ from django.db.models import Count
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, permission_classes
 from drf_yasg import openapi
-
+from django.utils.html import format_html
 from .filters import BlogFilter, FabricFilter
 from .pagination import CustomPagination
 from .models import (
@@ -910,47 +910,92 @@ def checkout(request):
     if order_serializer.is_valid():
         order = order_serializer.save()
 
-        # Create a ContactRequest for the product request
-        contact_request = ContactRequest.objects.create(
-            user=request.user,
-            request_type="product_request",
-            subject="Product request generated from checkout",
-            message="Product request generated from checkout",
-            company_name=request.user.company_name,
-            related_order=order,
+        # Generate the HTML table for the email
+        table_rows = ""
+        for idx, item in enumerate(cart_items, start=1):
+            table_rows += format_html(
+                """
+                <tr>
+                    <td>{s_no}</td>
+                    <td><img src="{image_url}" width="50" height="50"></td>
+                    <td>{description}</td>
+                    <td>{quantity}</td>
+                </tr>
+                """,
+                s_no=idx,
+                image_url=(
+                    item.fabric.color_images.first().primary_image.file.url
+                    if item.fabric.color_images.exists()
+                    else ""
+                ),
+                description=f"{item.fabric.title} - {item.color}",
+                quantity=item.quantity,
+            )
+
+        table_html = format_html(
+            """
+            <table border="1" cellpadding="5" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Image</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {table_rows}
+                </tbody>
+            </table>
+            """,
+            table_rows=table_rows,
         )
 
-        # Clear the cart
-        cart_items.delete()
+        # Send email to user with the table
+        user_email_subject = "Your Order Summary"
+        user_email_message = format_html(
+            f"""
+            <p>Dear {request.user.name},</p>
+            <p>Thank you for your order. Below is the summary of your order:</p>
+            {table_html}
+            <p>We will process your order soon. Thank you for shopping with us!</p>
+            """
+        )
 
-        # Prepare email content
-        user_email_subject = "Checkout Successful"
-        user_email_message = f"Dear {request.user.name},\n\nYour checkout was successful. Your request number is {contact_request.request_number}.\n\nThank you for shopping with us!"
-        admin_email_subject = "New Checkout Order"
-        admin_email_message = f"A new checkout has been processed.\n\nUser: {request.user.username}\nRequest Number: {contact_request.request_number}\nOrder Details: {order_data}"
-
-        # Send email to user
-        send_mail(
+        email = EmailMessage(
             user_email_subject,
             user_email_message,
             settings.DEFAULT_FROM_EMAIL,
             [request.user.email],
-            fail_silently=False,
+        )
+        email.content_subtype = "html"  # To send the email in HTML format
+        email.send()
+
+        # Send email to admin with the same table
+        admin_email_subject = "New Order Received"
+        admin_email_message = format_html(
+            f"""
+            <p>A new order has been placed by {request.user.username}. Below is the summary of the order:</p>
+            {table_html}
+            """
         )
 
-        # Send email to admin
-        send_mail(
+        email = EmailMessage(
             admin_email_subject,
             admin_email_message,
             settings.DEFAULT_FROM_EMAIL,
-            ["corleeandco@gmail.com"],
-            fail_silently=False,
+            ["corleeandco@gmail.com"],  # Admin email
         )
+        email.content_subtype = "html"
+        email.send()
+
+        # Clear the cart
+        cart_items.delete()
 
         return Response(
             {
-                "request_number": contact_request.request_number,
-                "message": "Product request submitted successfully.",
+                "request_number": order.id,
+                "message": "Order placed successfully.",
             },
             status=status.HTTP_201_CREATED,
         )
