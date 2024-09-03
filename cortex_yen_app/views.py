@@ -879,7 +879,7 @@ class CartItemViewSet(viewsets.ModelViewSet):
     method="post",
     responses={
         201: openapi.Response("Order created", OrderSerializer),
-        400: "invalid input",
+        400: "Invalid input",
     },
     security=[{"token": []}],
 )
@@ -910,26 +910,31 @@ def checkout(request):
     if order_serializer.is_valid():
         order = order_serializer.save()
 
+        # Create a ContactRequest for the product request
+        contact_request = ContactRequest.objects.create(
+            user=request.user,
+            request_type="product_request",
+            subject="Product request generated from checkout",
+            message="Product request generated from checkout",
+            company_name=request.user.company_name,
+            related_order=order,
+        )
+
         # Generate the HTML table for the email
         table_rows = format_html_join(
             "\n",
-            "<tr>"
-            "<td style='padding: 8px; text-align: left;'>{}</td>"  # S.No
-            "<td style='padding: 8px; text-align: left;'>{}</td>"  # Order Date
-            "<td style='padding: 8px; text-align: left;'>{}</td>"  # Item Code
-            "<td style='padding: 8px; text-align: left;'><img src='{}' width='50' height='50'></td>"  # Image
-            "<td style='padding: 8px; text-align: left;'>{}</td>"  # Quantity
-            "</tr>",
+            "<tr><td>{}</td><td>{}</td><td>{}</td><td><img src='{}' width='50' height='50'></td><td>{}</td><td>{}</td></tr>",
             [
                 (
                     idx,
-                    order.order_date.strftime("%Y-%m-%d"),
-                    item.fabric.item_code,
+                    order.order_date.strftime("%Y-%m-%d"),  # Order Date
+                    item.fabric.item_code,  # Item Code
                     (
                         item.fabric.color_images.first().primary_image.file.url
                         if item.fabric.color_images.exists()
                         else ""
                     ),
+                    contact_request.request_number,  # Request Number
                     item.quantity,
                 )
                 for idx, item in enumerate(cart_items, start=1)
@@ -941,11 +946,12 @@ def checkout(request):
             <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
                 <thead>
                     <tr>
-                        <th style="padding: 8px; text-align: left;'>S.No</th>
-                        <th style="padding: 8px; text-align: left;'>Order Date</th>
-                        <th style="padding: 8px; text-align: left;'>Item Code</th>
-                        <th style="padding: 8px; text-align: left;'>Image</th>
-                        <th style="padding: 8px; text-align: left;'>Quantity</th>
+                        <th style="padding: 8px; text-align: left;">S.No</th>
+                        <th style="padding: 8px; text-align: left;">Order Date</th>
+                        <th style="padding: 8px; text-align: left;">Item Code</th>
+                        <th style="padding: 8px; text-align: left;">Image</th>
+                        <th style="padding: 8px; text-align: left;">Request Number</th>
+                        <th style="padding: 8px; text-align: left;">Quantity</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -956,7 +962,7 @@ def checkout(request):
             table_rows,
         )
 
-        # Send email to user with the table
+        # Prepare email content
         user_email_subject = "Your Order Summary"
         user_email_message = format_html(
             f"""
@@ -967,16 +973,6 @@ def checkout(request):
             """
         )
 
-        email = EmailMessage(
-            user_email_subject,
-            user_email_message,
-            settings.DEFAULT_FROM_EMAIL,
-            [request.user.email],
-        )
-        email.content_subtype = "html"  # To send the email in HTML format
-        email.send()
-
-        # Send email to admin with the same table
         admin_email_subject = "New Order Received"
         admin_email_message = format_html(
             f"""
@@ -985,21 +981,32 @@ def checkout(request):
             """
         )
 
-        email = EmailMessage(
+        # Send email to user
+        user_email = EmailMessage(
+            user_email_subject,
+            user_email_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [request.user.email],
+        )
+        user_email.content_subtype = "html"  # To send the email in HTML format
+        user_email.send()
+
+        # Send email to admin
+        admin_email = EmailMessage(
             admin_email_subject,
             admin_email_message,
             settings.DEFAULT_FROM_EMAIL,
-            ["corleeandco@gmail.com"],  # Admin email
+            ["corleeandco@gmail.com"],
         )
-        email.content_subtype = "html"
-        email.send()
+        admin_email.content_subtype = "html"
+        admin_email.send()
 
         # Clear the cart
         cart_items.delete()
 
         return Response(
             {
-                "request_number": order.id,
+                "request_number": contact_request.request_number,
                 "message": "Order placed successfully.",
             },
             status=status.HTTP_201_CREATED,
