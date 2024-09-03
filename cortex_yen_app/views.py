@@ -9,7 +9,7 @@ from django.db.models import Count
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, permission_classes
 from drf_yasg import openapi
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from .filters import BlogFilter, FabricFilter
 from .pagination import CustomPagination
 from .models import (
@@ -911,44 +911,41 @@ def checkout(request):
         order = order_serializer.save()
 
         # Generate the HTML table for the email
-        table_rows = ""
-        for idx, item in enumerate(cart_items, start=1):
-            table_rows += format_html(
-                """
-                <tr>
-                    <td>{s_no}</td>
-                    <td><img src="{image_url}" width="50" height="50"></td>
-                    <td>{description}</td>
-                    <td>{quantity}</td>
-                </tr>
-                """,
-                s_no=idx,
-                image_url=(
-                    item.fabric.color_images.first().primary_image.file.url
-                    if item.fabric.color_images.exists()
-                    else ""
-                ),
-                description=f"{item.fabric.title} - {item.color}",
-                quantity=item.quantity,
-            )
+        table_rows = format_html_join(
+            "\n",
+            "<tr><td>{}</td><td><img src='{}' width='50' height='50'></td><td>{}</td><td>{}</td></tr>",
+            [
+                (
+                    idx,
+                    (
+                        item.fabric.color_images.first().primary_image.file.url
+                        if item.fabric.color_images.exists()
+                        else ""
+                    ),
+                    f"{item.fabric.title} - {item.color}",
+                    item.quantity,
+                )
+                for idx, item in enumerate(cart_items, start=1)
+            ],
+        )
 
         table_html = format_html(
             """
-            <table border="1" cellpadding="5" cellspacing="0">
+            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
                 <thead>
                     <tr>
-                        <th>S.No</th>
-                        <th>Image</th>
-                        <th>Description</th>
-                        <th>Quantity</th>
+                        <th style="padding: 8px; text-align: left;">S.No</th>
+                        <th style="padding: 8px; text-align: left;">Image</th>
+                        <th style="padding: 8px; text-align: left;">Description</th>
+                        <th style="padding: 8px; text-align: left;">Quantity</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {table_rows}
+                    {}
                 </tbody>
             </table>
             """,
-            table_rows=table_rows,
+            table_rows,
         )
 
         # Send email to user with the table
