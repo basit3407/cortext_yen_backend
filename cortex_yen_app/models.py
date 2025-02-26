@@ -79,7 +79,13 @@ class FabricColorImage(models.Model):
         null=True,
         blank=True,
     )
-
+    model_image = models.ForeignKey(
+        MediaUploads,
+        on_delete=models.DO_NOTHING,
+        related_name="model_image",
+        null=True,
+        blank=True,
+    )
     def __str__(self):
         return f"{self.color} images for {self.fabric.title}"
 
