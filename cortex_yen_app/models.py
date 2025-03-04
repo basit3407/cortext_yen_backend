@@ -79,7 +79,6 @@ class FabricColorImage(models.Model):
         null=True,
         blank=True,
     )
-    # New field added below:
     model_image = models.ForeignKey(
         MediaUploads,
         on_delete=models.DO_NOTHING,
@@ -87,6 +86,9 @@ class FabricColorImage(models.Model):
         null=True,
         blank=True,
     )
+
+    def __str__(self):
+        return f"{self.color} images for {self.fabric.title}"
 
 
 class CustomUser(AbstractUser):
