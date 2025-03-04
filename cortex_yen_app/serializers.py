@@ -174,6 +174,9 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
     aux_image1_url = serializers.CharField(source="aux_image1.file.url", read_only=True)
     aux_image2_url = serializers.CharField(source="aux_image2.file.url", read_only=True)
     aux_image3_url = serializers.CharField(source="aux_image3.file.url", read_only=True)
+    model_image_url = serializers.CharField(
+        source="model_image.file.url", read_only=True
+    )  # New field
 
     class Meta:
         model = FabricColorImage
@@ -183,6 +186,7 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
             "aux_image1_url",
             "aux_image2_url",
             "aux_image3_url",
+            "model_image_url",
         ]
 
 

@@ -25,6 +25,14 @@ from .models import (
 class FabricColorImageInline(admin.TabularInline):
     model = FabricColorImage
     extra = 1  # Number of extra forms to display
+    fields = (
+        "color",
+        "primary_image",
+        "aux_image1",
+        "aux_image2",
+        "aux_image3",
+        "model_image",  # New field added here
+    )
 
 
 class FabricAdmin(admin.ModelAdmin):
@@ -123,7 +131,7 @@ admin.site.register(CustomUser, CustomUserAdmin)
 
 @admin.register(FabricColorImage)
 class FabricColorImageAdmin(admin.ModelAdmin):
-    list_display = ("fabric", "color")
+    list_display = ("fabric", "color", "model_image")  # Added model_image here
     search_fields = ("fabric__title", "color")
 
 
