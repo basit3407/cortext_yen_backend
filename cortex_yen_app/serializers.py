@@ -178,6 +178,9 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
         source="model_image.file.url", read_only=True
     )  # New field
 
+    # Reference the color from the related FabricColorCategory (change "display_name" as needed)
+    color = serializers.CharField(source="color_category.display_name", read_only=True)
+
     class Meta:
         model = FabricColorImage
         fields = [
