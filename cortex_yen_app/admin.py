@@ -123,8 +123,8 @@ admin.site.register(CustomUser, CustomUserAdmin)
 
 @admin.register(FabricColorImage)
 class FabricColorImageAdmin(admin.ModelAdmin):
-    list_display = ("fabric", "color")
-    search_fields = ("fabric__title", "color")
+    list_display = ("fabric",)  # Removed "color"
+    search_fields = ("fabric__title",)  # Removed "color"
 
 
 class ContactRequestAdmin(admin.ModelAdmin):

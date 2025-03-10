@@ -52,7 +52,6 @@ class FabricColorImage(models.Model):
     color_category = models.ForeignKey(
         FabricColorCategory, related_name="colors", on_delete=models.SET_NULL, null=True
     )
-    color = models.CharField(max_length=50, validators=[validate_colors])
     primary_image = models.ForeignKey(
         MediaUploads,
         on_delete=models.DO_NOTHING,
@@ -88,7 +87,7 @@ class FabricColorImage(models.Model):
     )
 
     def __str__(self):
-        return f"{self.color} images for {self.fabric.title}"
+        return f"{self.color_category.display_name} images for {self.fabric.title}"
 
 
 class CustomUser(AbstractUser):
