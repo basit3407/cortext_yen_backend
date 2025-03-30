@@ -44,6 +44,18 @@ class FabricColorCategory(models.Model):
     def __str__(self):
         return self.display_name
 
+<<<<<<< HEAD
+=======
+    def delete(self, *args, **kwargs):
+        # Check if this color category is being used by any fabric color images
+        fabric_count = self.colors.count()
+        if fabric_count > 0:
+            raise ValidationError(
+                f"This color category cannot be deleted since it is being used in {fabric_count} product(s)."
+            )
+        super().delete(*args, **kwargs)
+
+>>>>>>> master
 
 class FabricColorImage(models.Model):
     fabric = models.ForeignKey(
@@ -56,6 +68,12 @@ class FabricColorImage(models.Model):
         MediaUploads,
         on_delete=models.DO_NOTHING,
         related_name="primary_images",
+<<<<<<< HEAD
+=======
+        null=False,
+        blank=False,
+        default=1  # This will be used for existing records
+>>>>>>> master
     )
     aux_image1 = models.ForeignKey(
         MediaUploads,
@@ -126,6 +144,31 @@ class CustomUser(AbstractUser):
         self.verification_token = None
         self.save()
 
+<<<<<<< HEAD
+=======
+    def delete(self, *args, **kwargs):
+        # Delete all related records first
+        # Delete orders (this will cascade delete order items due to CASCADE on_delete)
+        self.order_set.all().delete()
+        
+        # Delete favorites
+        self.favorite_set.all().delete()
+        
+        # Delete contact requests
+        self.contactrequest_set.all().delete()
+        
+        # Delete cart and cart items
+        if hasattr(self, 'cart'):
+            self.cart.items.all().delete()
+            self.cart.delete()
+        
+        # Delete blogs authored by the user
+        self.blog_set.all().delete()
+        
+        # Finally delete the user
+        super().delete(*args, **kwargs)
+
+>>>>>>> master
     def __str__(self):
         return self.username
 
@@ -140,6 +183,18 @@ class ProductCategory(models.Model):
     def __str__(self):
         return self.name
 
+<<<<<<< HEAD
+=======
+    def delete(self, *args, **kwargs):
+        # Check if this category is being used by any fabrics
+        fabric_count = self.fabric_set.count()
+        if fabric_count > 0:
+            raise ValidationError(
+                f"This product category cannot be deleted since it is being used in {fabric_count} product(s)."
+            )
+        super().delete(*args, **kwargs)
+
+>>>>>>> master
 
 class Fabric(models.Model):
     product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
@@ -168,6 +223,26 @@ class Fabric(models.Model):
                 "You must add at least one color along with the primary image."
             )
 
+<<<<<<< HEAD
+=======
+    def delete(self, *args, **kwargs):
+        # Check if this fabric is being used in any orders
+        order_count = self.orderitem_set.count()
+        if order_count > 0:
+            raise ValidationError(
+                f"This fabric cannot be deleted since it is being used in {order_count} order(s)."
+            )
+        
+        # Check if this fabric is being used in any contact requests
+        contact_request_count = self.contactrequest_set.count()
+        if contact_request_count > 0:
+            raise ValidationError(
+                f"This fabric cannot be deleted since it is being used in {contact_request_count} contact request(s)."
+            )
+        
+        super().delete(*args, **kwargs)
+
+>>>>>>> master
     def __str__(self):
         return self.title
 
@@ -197,7 +272,11 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     fabric = models.ForeignKey(
+<<<<<<< HEAD
         Fabric, on_delete=models.CASCADE, related_name="orderitem_set"
+=======
+        Fabric, on_delete=models.CASCADE, related_name="orderitem_set", null=True, blank=True
+>>>>>>> master
     )
     color = models.CharField(max_length=100)
     quantity = models.PositiveIntegerField()
@@ -314,6 +393,11 @@ class ContactRequest(models.Model):
     )
     company_name = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True, null=True)
+<<<<<<< HEAD
+=======
+    name = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+>>>>>>> master
     sample_requested = models.BooleanField(default=False)
     related_order = models.ForeignKey(
         Order, null=True, blank=True, on_delete=models.CASCADE

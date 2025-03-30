@@ -1,6 +1,10 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.response import Response
+<<<<<<< HEAD
+=======
+from django_filters.rest_framework import DjangoFilterBackend
+>>>>>>> master
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from rest_framework.views import APIView
@@ -25,6 +29,7 @@ from .models import (
     FabricColorCategory,
     Favorite,
     ProductCategory,
+<<<<<<< HEAD
 )
 from .serializers import (
     BlogCategorySerializer,
@@ -42,10 +47,49 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     ProductCategorySerializer,
+=======
+    MediaUploads,
+    Order,
+)
+from .serializers import (
+    BlogCategorySerializer,
+    BlogCategoryCreateUpdateSerializer,
+    BlogSerializer,
+    BlogCreateUpdateSerializer,
+    CartItemSerializer,
+    ContactDetailsSerializer,
+    ContactDetailsCreateUpdateSerializer,
+    ContactFormSerializer,
+    ContactRequestSerializer,
+    ContactRequestCreateUpdateSerializer,
+    EventSerializer,
+    EventCreateUpdateSerializer,
+    FabricColorCategorySerializer,
+    FabricColorCategoryCreateUpdateSerializer,
+    FabricCreateUpdateSerializer,
+    FabricListSerializer,
+    FabricSerializer,
+    FavoriteSerializer,
+    MediaUploadsSerializer,
+    OrderItemSerializer,
+    OrderSerializer,
+    OrderCreateUpdateSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    ProductCategorySerializer,
+    ProductCategoryCreateUpdateSerializer,
+>>>>>>> master
     RetreveUpdateUserSerializer,
     SubscriptionSerializer,
     UserLoginSerializer,
     UserSerializer,
+<<<<<<< HEAD
+=======
+    CustomUserCreateUpdateSerializer,
+    FabricWithIdsSerializer,
+    OrderItemCreateUpdateSerializer,
+    ContactRequestWithoutOrderSerializer,
+>>>>>>> master
 )
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -66,8 +110,14 @@ from django.contrib.auth.admin import sensitive_post_parameters_m
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, filters
+<<<<<<< HEAD
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import RetrieveUpdateAPIView
+=======
+from rest_framework.generics import RetrieveUpdateAPIView
+from django.core.exceptions import ValidationError
+from django.http import Http404
+>>>>>>> master
 
 
 class GoogleLoginAPIView(APIView):
@@ -392,6 +442,13 @@ class ProductCategoryListAPIView(generics.ListAPIView):
         return ProductCategory.objects.annotate(
             total_orders=Count("fabric__order")
         ).order_by("-total_orders")
+<<<<<<< HEAD
+=======
+        
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        return context
+>>>>>>> master
 
 
 fabric_pagination_schema = openapi.Schema(
@@ -467,6 +524,13 @@ class FabricListAPIView(generics.ListAPIView):
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+<<<<<<< HEAD
+=======
+        
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        return context
+>>>>>>> master
 
 
 class FabricDetailAPIView(generics.RetrieveAPIView):
@@ -476,6 +540,181 @@ class FabricDetailAPIView(generics.RetrieveAPIView):
     @swagger_auto_schema(responses={200: FabricSerializer()})
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+<<<<<<< HEAD
+=======
+        
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        return context
+
+
+class FabricDetailWithIdsAPIView(generics.RetrieveAPIView):
+    """
+    Retrieve a fabric with all image IDs included in the response.
+    This endpoint is similar to `/fabrics/<id>/` but includes IDs for all images
+    (primary, auxiliary, and model).
+    """
+    queryset = Fabric.objects.all()
+    serializer_class = FabricWithIdsSerializer
+
+    @swagger_auto_schema(
+        operation_description="Get fabric details with image IDs included",
+        responses={200: FabricWithIdsSerializer()}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+        
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        return context
+
+
+class FabricCreateAPIView(generics.ListCreateAPIView):
+    queryset = Fabric.objects.all()
+    filterset_class = FabricFilter
+    pagination_class = CustomPagination
+    filter_backends = (DjangoFilterBackend,)
+    
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return FabricCreateUpdateSerializer
+        return FabricSerializer
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['product_category', 'title', 'description', 'composition', 'weight', 'finish', 'item_code'],
+            properties={
+                'product_category': openapi.Schema(type=openapi.TYPE_INTEGER, description='Product category ID'),
+                'title': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric title'),
+                'description': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric description'),
+                'composition': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric composition'),
+                'weight': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric weight'),
+                'finish': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric finish'),
+                'item_code': openapi.Schema(type=openapi.TYPE_STRING, description='Unique item code'),
+                'is_hot_selling': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Is hot selling flag'),
+                'color_images': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'color_category': openapi.Schema(type=openapi.TYPE_INTEGER, description='Color category ID'),
+                            'primary_image': openapi.Schema(type=openapi.TYPE_INTEGER, description='Primary image ID (MediaUploads)'),
+                            'aux_image1': openapi.Schema(type=openapi.TYPE_INTEGER, description='Auxiliary image 1 ID (optional)'),
+                            'aux_image2': openapi.Schema(type=openapi.TYPE_INTEGER, description='Auxiliary image 2 ID (optional)'),
+                            'aux_image3': openapi.Schema(type=openapi.TYPE_INTEGER, description='Auxiliary image 3 ID (optional)'),
+                            'model_image': openapi.Schema(type=openapi.TYPE_INTEGER, description='Model image ID (optional)')
+                        },
+                        required=['color_category', 'primary_image']
+                    ),
+                    description='List of color images for the fabric'
+                )
+            },
+        ),
+        responses={201: FabricSerializer()},
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        responses={200: fabric_pagination_schema},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class FabricUpdateAPIView(generics.UpdateAPIView):
+    queryset = Fabric.objects.all()
+    serializer_class = FabricCreateUpdateSerializer
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'product_category': openapi.Schema(type=openapi.TYPE_INTEGER, description='Product category ID'),
+                'title': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric title'),
+                'description': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric description'),
+                'composition': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric composition'),
+                'weight': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric weight'),
+                'finish': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric finish'),
+                'item_code': openapi.Schema(type=openapi.TYPE_STRING, description='Unique item code'),
+                'is_hot_selling': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Is hot selling flag'),
+                'color_images': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'color_category': openapi.Schema(type=openapi.TYPE_INTEGER, description='Color category ID'),
+                            'primary_image': openapi.Schema(type=openapi.TYPE_INTEGER, description='Primary image ID (MediaUploads)'),
+                            'aux_image1': openapi.Schema(type=openapi.TYPE_INTEGER, description='Auxiliary image 1 ID (optional)'),
+                            'aux_image2': openapi.Schema(type=openapi.TYPE_INTEGER, description='Auxiliary image 2 ID (optional)'),
+                            'aux_image3': openapi.Schema(type=openapi.TYPE_INTEGER, description='Auxiliary image 3 ID (optional)'),
+                            'model_image': openapi.Schema(type=openapi.TYPE_INTEGER, description='Model image ID (optional)')
+                        }
+                    ),
+                    description='List of color images for the fabric'
+                )
+            },
+        ),
+        responses={200: FabricSerializer()},
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'product_category': openapi.Schema(type=openapi.TYPE_INTEGER, description='Product category ID'),
+                'title': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric title'),
+                'description': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric description'),
+                'composition': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric composition'),
+                'weight': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric weight'),
+                'finish': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric finish'),
+                'item_code': openapi.Schema(type=openapi.TYPE_STRING, description='Unique item code'),
+                'is_hot_selling': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Is hot selling flag'),
+                'color_images': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'color_category': openapi.Schema(type=openapi.TYPE_INTEGER, description='Color category ID'),
+                            'primary_image': openapi.Schema(type=openapi.TYPE_INTEGER, description='Primary image ID (MediaUploads)'),
+                            'aux_image1': openapi.Schema(type=openapi.TYPE_INTEGER, description='Auxiliary image 1 ID (optional)'),
+                            'aux_image2': openapi.Schema(type=openapi.TYPE_INTEGER, description='Auxiliary image 2 ID (optional)'),
+                            'aux_image3': openapi.Schema(type=openapi.TYPE_INTEGER, description='Auxiliary image 3 ID (optional)'),
+                            'model_image': openapi.Schema(type=openapi.TYPE_INTEGER, description='Model image ID (optional)')
+                        }
+                    ),
+                    description='List of color images for the fabric'
+                )
+            },
+        ),
+        responses={200: FabricSerializer()},
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+
+class FabricDeleteAPIView(generics.DestroyAPIView):
+    queryset = Fabric.objects.all()
+    serializer_class = FabricSerializer
+    
+    @swagger_auto_schema(
+        responses={
+            204: "No Content",
+            400: "Bad Request - Fabric is in use"
+        }
+    )
+    def delete(self, request, *args, **kwargs):
+        try:
+            return super().delete(request, *args, **kwargs)
+        except ValidationError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+>>>>>>> master
 
 
 class ToggleFavoriteView(generics.CreateAPIView):
@@ -492,7 +731,10 @@ class ToggleFavoriteView(generics.CreateAPIView):
             },
         ),
         responses={201: "Added to favorites", 204: "Removed from favorites"},
+<<<<<<< HEAD
         security=[{"token": []}],
+=======
+>>>>>>> master
     )
     def post(self, request):
         fabric_id = request.data.get("fabric_id")
@@ -533,7 +775,10 @@ class FavoriteFabricsListView(generics.ListAPIView):
             ),
         ],
         responses={200: FavoriteSerializer(many=True)},
+<<<<<<< HEAD
         security=[{"token": []}],
+=======
+>>>>>>> master
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -561,6 +806,7 @@ class FavoriteFabricsListView(generics.ListAPIView):
         return queryset
 
 
+<<<<<<< HEAD
 # class OrderViewSet(viewsets.ModelViewSet):
 #     permission_classes = [permissions.IsAuthenticated]
 #     serializer_class = OrderSerializer
@@ -606,6 +852,8 @@ class FavoriteFabricsListView(generics.ListAPIView):
 #         return Response(serializer.data)
 
 
+=======
+>>>>>>> master
 class ToggleHotSellingView(generics.UpdateAPIView):
     queryset = Fabric.objects.all()
     serializer_class = FabricSerializer
@@ -620,6 +868,7 @@ class ToggleHotSellingView(generics.UpdateAPIView):
         return Response(serializer.data)
 
 
+<<<<<<< HEAD
 # class BestSellingFabricsAPIView(generics.ListAPIView):
 #     serializer_class = FabricSerializer
 
@@ -630,6 +879,8 @@ class ToggleHotSellingView(generics.UpdateAPIView):
 #         )
 
 
+=======
+>>>>>>> master
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     pagination_class = CustomPagination
@@ -638,6 +889,13 @@ class EventViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(responses={200: EventSerializer(many=True)})
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+<<<<<<< HEAD
+=======
+        
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        return context
+>>>>>>> master
 
 
 class BlogViewSet(viewsets.ModelViewSet):
@@ -658,6 +916,14 @@ class BlogViewSet(viewsets.ModelViewSet):
         "view_count",
     ]
     ordering = ["-created_at"]  # Default ordering
+<<<<<<< HEAD
+=======
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return BlogCreateUpdateSerializer
+        return BlogSerializer
+>>>>>>> master
 
     @swagger_auto_schema(responses={200: BlogSerializer(many=True)})
     def list(self, request, *args, **kwargs):
@@ -665,12 +931,61 @@ class BlogViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(responses={200: BlogSerializer()})
     def retrieve(self, request, *args, **kwargs):
+<<<<<<< HEAD
         instance = self.get_object()
         instance.view_count += 1
         instance.save()
 
         return super().retrieve(request, *args, **kwargs)
 
+=======
+        # Increment view count on retrieve
+        instance = self.get_object()
+        instance.view_count += 1
+        instance.save()
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=BlogCreateUpdateSerializer,
+        responses={201: BlogSerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=BlogCreateUpdateSerializer,
+        responses={200: BlogSerializer()}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=BlogCreateUpdateSerializer,
+        responses={200: BlogSerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={204: "No Content"})
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Http404:
+            # If the blog doesn't exist, return 404
+            return Response(
+                {"error": "Blog not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            # For other exceptions, return 400
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+>>>>>>> master
 
 class ContactFormView(APIView):
 
@@ -692,6 +1007,10 @@ class ContactFormView(APIView):
             company_name = validated_data["company_name"]
             request_type = validated_data["request_type"]
             sample_requested = validated_data["sample_requested"]
+<<<<<<< HEAD
+=======
+            status = request.data.get("status", "new")  # Get status from request, default to "new"
+>>>>>>> master
 
             fabric = None
             if item_code:
@@ -703,6 +1022,7 @@ class ContactFormView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
+<<<<<<< HEAD
             contact_request = ContactRequest.objects.create(
                 user=request.user if request.user.is_authenticated else None,
                 email=email if not request.user.is_authenticated else None,
@@ -712,6 +1032,27 @@ class ContactFormView(APIView):
                 sample_requested=sample_requested,
                 request_type=request_type,
                 related_fabric=fabric if request_type == "product" else None,
+=======
+            # Set the appropriate status field based on request_type
+            status_data = {}
+            if request_type == "product_request":
+                status_data["order_status"] = status
+            else:
+                status_data["current_status"] = status
+
+            contact_request = ContactRequest.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                email=email,  # Always set email from form data
+                subject=subject,
+                message=message,
+                company_name=company_name,
+                name=name,
+                phone=phone_number,
+                sample_requested=sample_requested,
+                request_type=request_type,
+                related_fabric=fabric if request_type == "product" else None,
+                **status_data  # Add the appropriate status field
+>>>>>>> master
             )
 
             # Send email to admin
@@ -724,6 +1065,10 @@ class ContactFormView(APIView):
             Company Name: {company_name}
             Sample Requested: {"Yes" if sample_requested else "No"}
             Description: {message}
+<<<<<<< HEAD
+=======
+            Status: {status}
+>>>>>>> master
             """
 
             try:
@@ -753,6 +1098,10 @@ class ContactFormView(APIView):
             Item Code: {item_code or 'N/A'}
             Company Name: {company_name}
             Sample Requested: {"Yes" if sample_requested else "No"}
+<<<<<<< HEAD
+=======
+            Status: {status}
+>>>>>>> master
 
             If you have any further questions, please don't hesitate to contact us.
 
@@ -787,6 +1136,7 @@ class BlogCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = BlogCategorySerializer
 
 
+<<<<<<< HEAD
 # class CartViewSet(viewsets.ModelViewSet):
 #     permission_classes = [permissions.IsAuthenticated]
 #     serializer_class = CartSerializer
@@ -815,6 +1165,8 @@ class BlogCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+=======
+>>>>>>> master
 class CartItemViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CartItemSerializer
@@ -827,7 +1179,11 @@ class CartItemViewSet(viewsets.ModelViewSet):
         return CartItem.objects.filter(cart=cart)
 
     @swagger_auto_schema(
+<<<<<<< HEAD
         responses={200: CartItemSerializer(many=True)}, security=[{"token": []}]
+=======
+        responses={200: CartItemSerializer(many=True)},
+>>>>>>> master
     )
     def list(self, request, *args, **kwargs):
         user = request.user
@@ -846,7 +1202,10 @@ class CartItemViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(
         request_body=CartItemSerializer,
         responses={201: CartItemSerializer(), 400: "Invalid input"},
+<<<<<<< HEAD
         security=[{"token": []}],
+=======
+>>>>>>> master
     )
     def create(self, request, *args, **kwargs):
         cart = get_object_or_404(Cart, user=request.user)
@@ -868,7 +1227,11 @@ class CartItemViewSet(viewsets.ModelViewSet):
             serializer.save(cart=cart)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+<<<<<<< HEAD
     @swagger_auto_schema(responses={204: "No Content"}, security=[{"token": []}])
+=======
+    @swagger_auto_schema(responses={204: "No Content"})
+>>>>>>> master
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
@@ -1051,11 +1414,18 @@ class ContactRequestListCreateAPIView(
     #     return super().post(request, *args, **kwargs)
 
     def get_queryset(self):
+<<<<<<< HEAD
         return (
             ContactRequest.objects.filter(user=self.request.user)
             .annotate(total_orders=Count("related_fabric"))
             .order_by("-created_at")  # Order by latest
         )
+=======
+        user = self.request.user
+        if user.is_staff:
+            return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all()
+        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=user)
+>>>>>>> master
 
     # def perform_create(self, serializer):
     #     serializer.save(user=self.request.user)
@@ -1073,6 +1443,7 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
+<<<<<<< HEAD
 
         user_serializer = RetreveUpdateUserSerializer(request.user)
 
@@ -1085,6 +1456,12 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return ContactRequest.objects.filter(user=self.request.user)
+=======
+        return Response(serializer.data)
+
+    def get_queryset(self):
+        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=self.request.user)
+>>>>>>> master
 
 
 class UserAPIView(RetrieveUpdateAPIView):
@@ -1148,3 +1525,511 @@ class SubscriptionView(APIView):
 class FabricColorCategoryListView(generics.ListAPIView):
     queryset = FabricColorCategory.objects.all()
     serializer_class = FabricColorCategorySerializer
+<<<<<<< HEAD
+=======
+
+
+class MediaUploadsCreateAPIView(generics.CreateAPIView):
+    serializer_class = MediaUploadsSerializer
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['file'],
+            properties={
+                'file': openapi.Schema(
+                    type=openapi.TYPE_FILE,
+                    description='File to upload (image will be automatically converted to WebP format)'
+                ),
+            },
+        ),
+        responses={201: MediaUploadsSerializer()},
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
+class MediaUploadsListAPIView(generics.ListAPIView):
+    queryset = MediaUploads.objects.all()
+    serializer_class = MediaUploadsSerializer
+    pagination_class = CustomPagination
+    
+    @swagger_auto_schema(
+        responses={200: MediaUploadsSerializer(many=True)},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
+class MediaUploadsDetailAPIView(generics.RetrieveAPIView):
+    queryset = MediaUploads.objects.all()
+    serializer_class = MediaUploadsSerializer
+    
+    @swagger_auto_schema(
+        responses={200: MediaUploadsSerializer()},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
+class MediaUploadsDeleteAPIView(generics.DestroyAPIView):
+    queryset = MediaUploads.objects.all()
+    serializer_class = MediaUploadsSerializer
+    
+    @swagger_auto_schema(
+        responses={204: "No Content"},
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
+
+# ProductCategory ViewSet for CRUD operations
+class ProductCategoryViewSet(viewsets.ModelViewSet):
+    queryset = ProductCategory.objects.all()
+    serializer_class = ProductCategorySerializer
+    pagination_class = CustomPagination
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return ProductCategoryCreateUpdateSerializer
+        return ProductCategorySerializer
+
+    @swagger_auto_schema(responses={200: ProductCategorySerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={200: ProductCategorySerializer()})
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=ProductCategoryCreateUpdateSerializer,
+        responses={201: ProductCategorySerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=ProductCategoryCreateUpdateSerializer,
+        responses={200: ProductCategorySerializer()}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=ProductCategoryCreateUpdateSerializer,
+        responses={200: ProductCategorySerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        responses={
+            204: "No Content",
+            400: "Bad Request - Category is in use"
+        }
+    )
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ValidationError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+# BlogCategory ViewSet for CRUD operations
+class BlogCategoryViewSet(viewsets.ModelViewSet):
+    queryset = BlogCategory.objects.all()
+    serializer_class = BlogCategorySerializer
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return BlogCategoryCreateUpdateSerializer
+        return BlogCategorySerializer
+
+    @swagger_auto_schema(responses={200: BlogCategorySerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={200: BlogCategorySerializer()})
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=BlogCategoryCreateUpdateSerializer,
+        responses={201: BlogCategorySerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=BlogCategoryCreateUpdateSerializer,
+        responses={200: BlogCategorySerializer()}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=BlogCategoryCreateUpdateSerializer,
+        responses={200: BlogCategorySerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={204: "No Content"})
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
+# ColorCategory ViewSet for CRUD operations
+class FabricColorCategoryViewSet(viewsets.ModelViewSet):
+    queryset = FabricColorCategory.objects.all()
+    serializer_class = FabricColorCategorySerializer
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return FabricColorCategoryCreateUpdateSerializer
+        return FabricColorCategorySerializer
+
+    @swagger_auto_schema(responses={200: FabricColorCategorySerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={200: FabricColorCategorySerializer()})
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=FabricColorCategoryCreateUpdateSerializer,
+        responses={201: FabricColorCategorySerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=FabricColorCategoryCreateUpdateSerializer,
+        responses={200: FabricColorCategorySerializer()}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=FabricColorCategoryCreateUpdateSerializer,
+        responses={200: FabricColorCategorySerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        responses={
+            204: "No Content",
+            400: "Bad Request - Category is in use"
+        }
+    )
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ValidationError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+# Event ViewSet CRUD operations update
+class EventViewSet(viewsets.ModelViewSet):
+    queryset = Event.objects.all()
+    pagination_class = CustomPagination
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return EventCreateUpdateSerializer
+        return EventSerializer
+
+    @swagger_auto_schema(responses={200: EventSerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={200: EventSerializer()})
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=EventCreateUpdateSerializer,
+        responses={201: EventSerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=EventCreateUpdateSerializer,
+        responses={200: EventSerializer()}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=EventCreateUpdateSerializer,
+        responses={200: EventSerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={204: "No Content"})
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
+# Order ViewSet for CRUD operations
+class OrderViewSet(viewsets.ModelViewSet):
+    serializer_class = OrderSerializer
+    pagination_class = CustomPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            # Use prefetch_related for the items and select_related for the user
+            return Order.objects.select_related('user').prefetch_related('items__fabric').all()
+        # For regular users, filter by user and optimize with the same joins
+        return Order.objects.select_related('user').prefetch_related('items__fabric').filter(user=user)
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return OrderCreateUpdateSerializer
+        return OrderSerializer
+
+    @swagger_auto_schema(responses={200: OrderSerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={200: OrderSerializer()})
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=OrderCreateUpdateSerializer,
+        responses={201: OrderSerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=OrderCreateUpdateSerializer,
+        responses={200: OrderSerializer()}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=OrderCreateUpdateSerializer,
+        responses={200: OrderSerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={204: "No Content"})
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
+# Users ViewSet for CRUD operations
+class UserViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+    pagination_class = CustomPagination
+
+    def get_queryset(self):
+        return CustomUser.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return CustomUserCreateUpdateSerializer
+        return UserSerializer
+
+    @swagger_auto_schema(responses={200: UserSerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={200: UserSerializer()})
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=CustomUserCreateUpdateSerializer,
+        responses={201: UserSerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=CustomUserCreateUpdateSerializer,
+        responses={200: UserSerializer()}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=CustomUserCreateUpdateSerializer,
+        responses={200: UserSerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        responses={
+            204: "No Content",
+            400: "Bad Request - User deletion failed"
+        },
+        operation_description="Delete a user and all their related data (orders, favorites, contact requests, cart, and blogs)"
+    )
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to delete user: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+# ContactDetails ViewSet for CRUD operations
+class ContactDetailsViewSet(viewsets.ModelViewSet):
+    queryset = ContactDetails.objects.all()
+    pagination_class = CustomPagination
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return ContactDetailsCreateUpdateSerializer
+        return ContactDetailsSerializer
+
+    @swagger_auto_schema(responses={200: ContactDetailsSerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={200: ContactDetailsSerializer()})
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=ContactDetailsCreateUpdateSerializer,
+        responses={201: ContactDetailsSerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=ContactDetailsCreateUpdateSerializer,
+        responses={200: ContactDetailsSerializer()}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=ContactDetailsCreateUpdateSerializer,
+        responses={200: ContactDetailsSerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={204: "No Content"})
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
+# ContactRequest ViewSet for CRUD operations
+class ContactRequestViewSet(viewsets.ModelViewSet):
+    pagination_class = CustomPagination
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all()
+        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=user)
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return ContactRequestCreateUpdateSerializer
+        return ContactRequestSerializer
+
+    @swagger_auto_schema(responses={200: ContactRequestSerializer(many=True)})
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={200: ContactRequestSerializer()})
+    def retrieve(self, request, *args, **kwargs):
+        # Make sure to select_related('user') to optimize the query
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        request_body=ContactRequestCreateUpdateSerializer,
+        responses={201: ContactRequestSerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=ContactRequestCreateUpdateSerializer,
+        responses={200: ContactRequestSerializer()}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        request_body=ContactRequestCreateUpdateSerializer,
+        responses={200: ContactRequestSerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(responses={204: "No Content"})
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
+class AllContactRequestsView(APIView):
+    """
+    View to list all contact requests without order information.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    @swagger_auto_schema(
+        operation_description="Get all contact requests without order information",
+        operation_summary="Get all contact requests without order information",
+        responses={200: ContactRequestWithoutOrderSerializer(many=True)}
+    )
+    def get(self, request):
+        user = request.user
+        
+        # Determine which records to fetch based on user permissions
+        if user.is_staff:
+            contact_requests = ContactRequest.objects.select_related('user', 'related_fabric').all()
+        else:
+            contact_requests = ContactRequest.objects.select_related('user', 'related_fabric').filter(user=user)
+        
+        # Apply pagination
+        paginator = CustomPagination()
+        page = paginator.paginate_queryset(contact_requests, request)
+        
+        # Serialize the paginated results without order information
+        serializer = ContactRequestWithoutOrderSerializer(page, many=True)
+        
+        return paginator.get_paginated_response(serializer.data)
+>>>>>>> master

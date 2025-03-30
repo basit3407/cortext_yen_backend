@@ -141,6 +141,15 @@ STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 MEDIA_LOCATION = "corlee/uploads"
 MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIA_LOCATION}/"
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+<<<<<<< HEAD
+=======
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+# For local development when DEBUG is True
+if DEBUG:
+    MEDIA_URL = "/media/"
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+>>>>>>> master
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True

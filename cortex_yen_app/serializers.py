@@ -27,6 +27,10 @@ from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import SetPasswordForm
+<<<<<<< HEAD
+=======
+from django.db.models import Count, Q
+>>>>>>> master
 
 
 class FileSerializer(serializers.ModelSerializer):
@@ -43,6 +47,10 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = [
+<<<<<<< HEAD
+=======
+            "id",
+>>>>>>> master
             "username",
             "password",
             "email",
@@ -121,6 +129,11 @@ class RetreveUpdateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = [
+<<<<<<< HEAD
+=======
+            "id",
+            "username",
+>>>>>>> master
             "name",
             "company_name",
             "address",
@@ -140,7 +153,14 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         if obj.image:
+<<<<<<< HEAD
             return obj.image.file.url
+=======
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.file.url)
+            return f"{settings.SITE_URL}{obj.image.file.url}"
+>>>>>>> master
         return None
 
 
@@ -167,6 +187,7 @@ class ContactFormSerializer(serializers.Serializer):
         return data
 
 
+<<<<<<< HEAD
 class FabricColorImageSerializer(serializers.ModelSerializer):
     primary_image_url = serializers.CharField(
         source="primary_image.file.url", read_only=True
@@ -179,6 +200,19 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
     )  # New field
 
     # Reference the color from the related FabricColorCategory (change "display_name" as needed)
+=======
+from rest_framework import serializers
+from django.conf import settings
+from .models import FabricColorImage, Fabric
+
+class FabricColorImageSerializer(serializers.ModelSerializer):
+    primary_image_url = serializers.SerializerMethodField()
+    aux_image1_url = serializers.SerializerMethodField()
+    aux_image2_url = serializers.SerializerMethodField()
+    aux_image3_url = serializers.SerializerMethodField()
+    model_image_url = serializers.SerializerMethodField()  # New field
+
+>>>>>>> master
     color = serializers.CharField(source="color_category.display_name", read_only=True)
 
     class Meta:
@@ -192,6 +226,31 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
             "model_image_url",
         ]
 
+<<<<<<< HEAD
+=======
+    def get_full_image_url(self, file_field):
+        request = self.context.get("request")
+        if file_field:
+            return request.build_absolute_uri(file_field.url) if request else f"{settings.SITE_URL}{file_field.url}"
+        return None
+
+    def get_primary_image_url(self, obj):
+        return self.get_full_image_url(obj.primary_image.file)
+
+    def get_aux_image1_url(self, obj):
+        return self.get_full_image_url(obj.aux_image1.file) if obj.aux_image1 else None
+
+    def get_aux_image2_url(self, obj):
+        return self.get_full_image_url(obj.aux_image2.file) if obj.aux_image2 else None
+
+    def get_aux_image3_url(self, obj):
+        return self.get_full_image_url(obj.aux_image3.file) if obj.aux_image3 else None
+
+    def get_model_image_url(self, obj):
+        return self.get_full_image_url(obj.model_image.file) if obj.model_image else None
+
+
+>>>>>>> master
 
 class FabricListSerializer(serializers.ModelSerializer):
     # photo_url = serializers.SerializerMethodField()
@@ -259,6 +318,94 @@ class FabricSerializer(serializers.ModelSerializer):
         return FabricListSerializer(related_fabrics[:8], many=True).data
 
 
+<<<<<<< HEAD
+=======
+class FabricCreateUpdateSerializer(serializers.ModelSerializer):
+    product_category = serializers.PrimaryKeyRelatedField(queryset=ProductCategory.objects.all())
+    color_images = serializers.ListField(child=serializers.JSONField(), required=False, write_only=True)
+    
+    class Meta:
+        model = Fabric
+        fields = [
+            'product_category', 'title', 'description', 
+            'composition', 'weight', 'finish', 
+            'item_code', 'is_hot_selling', 'color_images'
+        ]
+    
+    def create(self, validated_data):
+        color_images_data = validated_data.pop('color_images', [])
+        fabric = Fabric.objects.create(**validated_data)
+        
+        # Create color images if provided
+        for color_image_data in color_images_data:
+            self._create_or_update_color_image(fabric, color_image_data)
+        
+        return fabric
+    
+    def update(self, instance, validated_data):
+        color_images_data = validated_data.pop('color_images', [])
+        
+        # Update fabric fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Track which color categories are being updated
+        updated_color_categories = set()
+        
+        # Update color images if provided
+        for color_image_data in color_images_data:
+            color_category_id = color_image_data.get('color_category')
+            updated_color_categories.add(color_category_id)
+            self._create_or_update_color_image(instance, color_image_data)
+        
+        # Delete any color images that aren't included in the update
+        if 'color_images' in self.initial_data:  # Only delete if color_images were explicitly provided
+            existing_color_images = FabricColorImage.objects.filter(fabric=instance)
+            for color_image in existing_color_images:
+                if color_image.color_category_id not in updated_color_categories:
+                    color_image.delete()
+        
+        return instance
+    
+    def _create_or_update_color_image(self, fabric, color_image_data):
+        color_category_id = color_image_data.get('color_category')
+        primary_image_id = color_image_data.get('primary_image')
+        aux_image1_id = color_image_data.get('aux_image1')
+        aux_image2_id = color_image_data.get('aux_image2')
+        aux_image3_id = color_image_data.get('aux_image3')
+        model_image_id = color_image_data.get('model_image')
+        
+        # Check if color image already exists for this fabric and color category
+        try:
+            color_image = FabricColorImage.objects.get(
+                fabric=fabric,
+                color_category_id=color_category_id
+            )
+        except FabricColorImage.DoesNotExist:
+            # Create new color image
+            color_image = FabricColorImage(
+                fabric=fabric,
+                color_category_id=color_category_id,
+                primary_image_id=primary_image_id
+            )
+        
+        # Update fields
+        color_image.primary_image_id = primary_image_id
+        if aux_image1_id:
+            color_image.aux_image1_id = aux_image1_id
+        if aux_image2_id:
+            color_image.aux_image2_id = aux_image2_id
+        if aux_image3_id:
+            color_image.aux_image3_id = aux_image3_id
+        if model_image_id:
+            color_image.model_image_id = model_image_id
+        
+        color_image.save()
+        return color_image
+
+
+>>>>>>> master
 class FavoriteSerializer(serializers.ModelSerializer):
     fabric = FabricSerializer()  # Serializer for the associated Fabric
 
@@ -283,10 +430,20 @@ class OrderSerializer(serializers.ModelSerializer):
     user_id = serializers.PrimaryKeyRelatedField(
         queryset=CustomUser.objects.all(), write_only=True, source="user"
     )
+<<<<<<< HEAD
 
     class Meta:
         model = Order
         fields = ["order_date", "items", "user_id"]
+=======
+    user = RetreveUpdateUserSerializer(read_only=True)
+    # Add order ID and user details explicitly for clarity
+    order_id = serializers.IntegerField(source='id', read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ["id", "order_id", "order_date", "items", "user_id", "user"]
+>>>>>>> master
 
     def create(self, validated_data):
         items_data = validated_data.pop("items")
@@ -308,7 +465,14 @@ class EventSerializer(serializers.ModelSerializer):
 
     def get_photo_url(self, obj):
         if obj.photo and obj.photo.file:
+<<<<<<< HEAD
             return obj.photo.file.url
+=======
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.photo.file.url)
+            return f"{settings.SITE_URL}{obj.photo.file.url}"
+>>>>>>> master
         return None
 
 
@@ -323,6 +487,10 @@ class BlogSerializer(serializers.ModelSerializer):
     author_photo_url = serializers.SerializerMethodField()
     author_name = serializers.CharField(source="author.username", read_only=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
+<<<<<<< HEAD
+=======
+    image_id = serializers.SerializerMethodField()
+>>>>>>> master
 
     class Meta:
         model = Blog
@@ -336,18 +504,41 @@ class BlogSerializer(serializers.ModelSerializer):
             "created_at",
             "photo_url",
             "author_photo_url",
+<<<<<<< HEAD
+=======
+            "image_id",
+>>>>>>> master
         ]
 
     def get_photo_url(self, obj):
         if obj.photo and obj.photo.file:
+<<<<<<< HEAD
             return obj.photo.file.url
+=======
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.photo.file.url)
+            return f"{settings.SITE_URL}{obj.photo.file.url}"
+>>>>>>> master
         return None
 
     def get_author_photo_url(self, obj):
         if obj.author.photo and obj.author.photo.file:
+<<<<<<< HEAD
             return obj.author.photo.file.url
         return None
 
+=======
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.author.photo.file.url)
+            return f"{settings.SITE_URL}{obj.author.photo.file.url}"
+        return None
+
+    def get_image_id(self, obj):
+        return obj.photo.id if obj.photo else None
+
+>>>>>>> master
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -431,17 +622,44 @@ class ContactRequestSerializer(serializers.ModelSerializer):
     related_fabric = FabricSerializer(read_only=True)
     related_order = OrderSerializer(read_only=True)
     status = serializers.SerializerMethodField()
+<<<<<<< HEAD
 
     def get_status(self, obj: ContactRequest):
 
         if obj.request_type == "product_request":
             return obj.order_status
 
+=======
+    user = RetreveUpdateUserSerializer(read_only=True)
+
+    def get_status(self, obj: ContactRequest):
+        if obj.request_type == "product_request":
+            return obj.order_status
+>>>>>>> master
         return obj.current_status
 
     class Meta:
         model = ContactRequest
+<<<<<<< HEAD
         exclude = ["user", "current_status", "order_status"]
+=======
+        exclude = ["current_status", "order_status"]
+
+
+class ContactRequestWithoutOrderSerializer(serializers.ModelSerializer):
+    related_fabric = FabricSerializer(read_only=True)
+    status = serializers.SerializerMethodField()
+    user = RetreveUpdateUserSerializer(read_only=True)
+
+    def get_status(self, obj: ContactRequest):
+        if obj.request_type == "product_request":
+            return obj.order_status
+        return obj.current_status
+
+    class Meta:
+        model = ContactRequest
+        exclude = ["current_status", "order_status", "related_order"]
+>>>>>>> master
 
 
 class ContactDetailsSerializer(serializers.ModelSerializer):
@@ -465,3 +683,301 @@ class FabricColorCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = FabricColorCategory
         fields = "__all__"
+<<<<<<< HEAD
+=======
+
+
+class MediaUploadsSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = MediaUploads
+        fields = ['id', 'file', 'file_url']
+    
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+
+
+class ProductCategoryCreateUpdateSerializer(serializers.ModelSerializer):
+    image = serializers.PrimaryKeyRelatedField(queryset=MediaUploads.objects.all(), required=False, allow_null=True)
+    
+    class Meta:
+        model = ProductCategory
+        fields = ['id', 'name', 'description', 'image']
+
+
+class BlogCategoryCreateUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogCategory
+        fields = ['id', 'name']
+
+
+class FabricColorCategoryCreateUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FabricColorCategory
+        fields = ['id', 'display_name', 'color']
+
+
+class EventCreateUpdateSerializer(serializers.ModelSerializer):
+    photo = serializers.PrimaryKeyRelatedField(queryset=MediaUploads.objects.all(), required=False, allow_null=True)
+    
+    class Meta:
+        model = Event
+        fields = ['id', 'title', 'description', 'date', 'time', 'photo', 'location', 'url', 'email', 'phone']
+
+
+class OrderItemCreateUpdateSerializer(serializers.ModelSerializer):
+    fabric = serializers.PrimaryKeyRelatedField(queryset=Fabric.objects.all())
+    
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'fabric', 'color', 'quantity']
+
+
+class OrderCreateUpdateSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False, allow_null=True)
+    items = OrderItemCreateUpdateSerializer(many=True, required=False)
+    
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'order_date', 'items']
+    
+    def validate_items(self, items):
+        """Validate that all items have a fabric specified."""
+        if items:
+            for item in items:
+                if not item.get('fabric'):
+                    raise serializers.ValidationError("Fabric is required for all order items.")
+        return items
+    
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        order = Order.objects.create(**validated_data)
+        
+        for item_data in items_data:
+            OrderItem.objects.create(order=order, **item_data)
+        
+        return order
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+        # Update the order fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # If items data is provided, update the items
+        if items_data is not None:
+            # First, remove existing items
+            instance.items.all().delete()
+            
+            # Then create new items
+            for item_data in items_data:
+                # Make sure 'fabric' is properly assigned and not overridden by 'fabric_id'
+                if 'fabric' in item_data:
+                    OrderItem.objects.create(order=instance, **item_data)
+                else:
+                    # If somehow fabric is missing, raise an error
+                    raise serializers.ValidationError({"fabric": "Fabric is required for order items."})
+        
+        return instance
+
+
+class CustomUserCreateUpdateSerializer(serializers.ModelSerializer):
+    photo = serializers.PrimaryKeyRelatedField(queryset=MediaUploads.objects.all(), required=False, allow_null=True)
+    password = serializers.CharField(write_only=True, required=False)
+    
+    class Meta:
+        model = CustomUser
+        fields = [
+            'id', 'username', 'name', 'email', 'company_name', 'address', 
+            'phone', 'mobile_phone', 'is_verified', 'photo', 'auth_method',
+            'password', 'is_staff', 'is_active'
+        ]
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'auth_method': {'required': False},
+        }
+    
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        user = CustomUser.objects.create(**validated_data)
+        
+        if password:
+            user.set_password(password)
+            user.save()
+            
+        return user
+    
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+            
+        if password:
+            instance.set_password(password)
+            
+        instance.save()
+        return instance
+
+
+class ContactDetailsCreateUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactDetails
+        fields = [
+            'id', 'phone', 'email', 'address', 'city', 'county', 'postal_code',
+            'latitude', 'longitude', 'country', 'facebook', 'instagram', 'whatsapp', 'line'
+        ]
+
+
+class ContactRequestCreateUpdateSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False, allow_null=True)
+    related_fabric = serializers.PrimaryKeyRelatedField(queryset=Fabric.objects.all(), required=False, allow_null=True)
+    related_order = serializers.PrimaryKeyRelatedField(queryset=Order.objects.all(), required=False, allow_null=True)
+    
+    class Meta:
+        model = ContactRequest
+        fields = [
+            'id', 'user', 'request_number', 'request_type', 'subject', 'message',
+            'created_at', 'related_fabric', 'company_name', 'email', 'name', 'phone',
+            'sample_requested', 'related_order', 'current_status', 'order_status'
+        ]
+        read_only_fields = ['request_number', 'created_at']
+
+
+class BlogCreateUpdateSerializer(serializers.ModelSerializer):
+    photo = serializers.PrimaryKeyRelatedField(queryset=MediaUploads.objects.all(), required=False, allow_null=True)
+    author = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    category = serializers.PrimaryKeyRelatedField(queryset=BlogCategory.objects.all())
+    
+    class Meta:
+        model = Blog
+        fields = [
+            'id', 'title', 'content', 'author', 'photo', 'category', 'view_count'
+        ]
+
+
+class FabricColorImageWithIdsSerializer(serializers.ModelSerializer):
+    primary_image_url = serializers.SerializerMethodField()
+    aux_image1_url = serializers.SerializerMethodField()
+    aux_image2_url = serializers.SerializerMethodField()
+    aux_image3_url = serializers.SerializerMethodField()
+    model_image_url = serializers.SerializerMethodField()
+    
+    primary_image_id = serializers.IntegerField(source='primary_image.id')
+    aux_image1_id = serializers.SerializerMethodField()
+    aux_image2_id = serializers.SerializerMethodField()
+    aux_image3_id = serializers.SerializerMethodField()
+    model_image_id = serializers.SerializerMethodField()
+    
+    color = serializers.CharField(source="color_category.display_name", read_only=True)
+    color_category_id = serializers.IntegerField(source='color_category.id')
+
+    class Meta:
+        model = FabricColorImage
+        fields = [
+            "id",
+            "color",
+            "color_category_id",
+            "primary_image_url",
+            "primary_image_id",
+            "aux_image1_url",
+            "aux_image1_id",
+            "aux_image2_url",
+            "aux_image2_id",
+            "aux_image3_url",
+            "aux_image3_id",
+            "model_image_url",
+            "model_image_id",
+        ]
+
+    def get_full_image_url(self, file_field):
+        request = self.context.get("request")
+        if file_field:
+            return request.build_absolute_uri(file_field.url) if request else f"{settings.SITE_URL}{file_field.url}"
+        return None
+
+    def get_primary_image_url(self, obj):
+        return self.get_full_image_url(obj.primary_image.file)
+
+    def get_aux_image1_url(self, obj):
+        return self.get_full_image_url(obj.aux_image1.file) if obj.aux_image1 else None
+        
+    def get_aux_image2_url(self, obj):
+        return self.get_full_image_url(obj.aux_image2.file) if obj.aux_image2 else None
+
+    def get_aux_image3_url(self, obj):
+        return self.get_full_image_url(obj.aux_image3.file) if obj.aux_image3 else None
+
+    def get_model_image_url(self, obj):
+        return self.get_full_image_url(obj.model_image.file) if obj.model_image else None
+        
+    def get_aux_image1_id(self, obj):
+        return obj.aux_image1.id if obj.aux_image1 else None
+        
+    def get_aux_image2_id(self, obj):
+        return obj.aux_image2.id if obj.aux_image2 else None
+        
+    def get_aux_image3_id(self, obj):
+        return obj.aux_image3.id if obj.aux_image3 else None
+        
+    def get_model_image_id(self, obj):
+        return obj.model_image.id if obj.model_image else None
+
+
+class FabricWithIdsSerializer(serializers.ModelSerializer):
+    is_favorite = serializers.SerializerMethodField()
+    related_fabrics = serializers.SerializerMethodField()
+    product_category_name = serializers.CharField(source="product_category.name")
+    color_images = FabricColorImageWithIdsSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Fabric
+        exclude = [
+            "product_category",
+        ]
+
+    def get_is_favorite(self, obj):
+        user = self.context.get("request").user
+        if user.is_authenticated:
+            return Favorite.objects.filter(user=user, fabric=obj).exists()
+        return False
+
+    def get_related_fabrics(self, obj):
+        user = self.context.get("request").user
+        related_fabrics = []
+
+        if user.is_authenticated:
+            favorite_fabrics = Favorite.objects.filter(user=user).values_list(
+                "fabric", flat=True
+            )
+            similar_to_favorites = (
+                Fabric.objects.filter(
+                    product_category__in=Fabric.objects.filter(
+                        id__in=favorite_fabrics
+                    ).values("product_category")
+                )
+                .exclude(id__in=favorite_fabrics)
+                .distinct()
+            )
+            related_fabrics = list(similar_to_favorites[:8])
+
+        if len(related_fabrics) < 8:
+            remaining_slots = 8 - len(related_fabrics)
+            similar_to_current = (
+                Fabric.objects.filter(product_category=obj.product_category)
+                .exclude(id=obj.id)
+                .exclude(id__in=[fabric.id for fabric in related_fabrics])[
+                    :remaining_slots
+                ]
+            )
+            related_fabrics.extend(similar_to_current)
+
+        return FabricListSerializer(related_fabrics[:8], many=True).data
+>>>>>>> master

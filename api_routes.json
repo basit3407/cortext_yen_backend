@@ -1,0 +1,760 @@
+{
+  "api_documentation": {
+    "title": "Corlee API Documentation",
+    "sections": [
+      {
+        "name": "Authentication",
+        "endpoints": [
+          {
+            "name": "Register User",
+            "endpoint": "/register/",
+            "method": "POST",
+            "description": "Register a new user",
+            "request_body": {
+              "username": "exampleuser",
+              "password": "password123",
+              "email": "user@example.com",
+              "name": "John Doe",
+              "company_name": "Example Company",
+              "address": "123 Example St",
+              "phone": "1234567890",
+              "mobile_phone": "0987654321"
+            },
+            "response": "User details with token"
+          },
+          {
+            "name": "Login",
+            "endpoint": "/login/",
+            "method": "POST",
+            "description": "Authenticate user and get token",
+            "request_body": {
+              "username": "exampleuser",
+              "password": "password123"
+            },
+            "response": "User details with token"
+          },
+          {
+            "name": "Google Login",
+            "endpoint": "/google-login/",
+            "method": "POST",
+            "description": "Authenticate user with Google ID token",
+            "request_body": {
+              "idToken": "google-id-token"
+            },
+            "response": "User details with token"
+          },
+          {
+            "name": "Email Verification",
+            "endpoint": "/verify-email/<verification_token>/",
+            "method": "GET",
+            "description": "Verify user email with token",
+            "response": "Redirects to frontend with success/failure message"
+          },
+          {
+            "name": "Password Reset",
+            "endpoint": "/password_reset/",
+            "method": "POST",
+            "description": "Request password reset",
+            "request_body": {
+              "email": "user@example.com"
+            },
+            "response": "Success message"
+          },
+          {
+            "name": "Password Reset Confirm",
+            "endpoint": "/password_reset/done/",
+            "method": "POST",
+            "description": "Confirm password reset with token",
+            "request_body": {
+              "new_password1": "newpassword123",
+              "new_password2": "newpassword123",
+              "uid": "uid_from_email",
+              "token": "token_from_email"
+            },
+            "response": "Success message"
+          }
+        ]
+      },
+      {
+        "name": "Product Categories",
+        "endpoints": [
+          {
+            "name": "List All Product Categories",
+            "endpoint": "/product-categories/",
+            "method": "GET",
+            "description": "Get a list of all product categories",
+            "query_parameters": {
+              "page": "Page number for pagination"
+            },
+            "response": "List of product categories with pagination"
+          },
+          {
+            "name": "Get Product Category",
+            "endpoint": "/product-categories/<id>/",
+            "method": "GET",
+            "description": "Get details of a specific product category",
+            "response": "Product category details"
+          },
+          {
+            "name": "Create Product Category",
+            "endpoint": "/product-categories/",
+            "method": "POST",
+            "description": "Create a new product category",
+            "request_body": {
+              "name": "Category Name",
+              "description": "Category Description",
+              "image": 1
+            },
+            "response": "Created product category details"
+          },
+          {
+            "name": "Update Product Category",
+            "endpoint": "/product-categories/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update an existing product category",
+            "request_body": {
+              "name": "Updated Category Name",
+              "description": "Updated Category Description",
+              "image": 2
+            },
+            "response": "Updated product category details"
+          },
+          {
+            "name": "Delete Product Category",
+            "endpoint": "/product-categories/<id>/",
+            "method": "DELETE",
+            "description": "Delete a product category",
+            "response": "No content (204)"
+          }
+        ]
+      },
+      {
+        "name": "Blog Categories",
+        "endpoints": [
+          {
+            "name": "List All Blog Categories",
+            "endpoint": "/blog-categories/",
+            "method": "GET",
+            "description": "Get a list of all blog categories",
+            "response": "List of blog categories"
+          },
+          {
+            "name": "Get Blog Category",
+            "endpoint": "/blog-categories/<id>/",
+            "method": "GET",
+            "description": "Get details of a specific blog category",
+            "response": "Blog category details"
+          },
+          {
+            "name": "Create Blog Category",
+            "endpoint": "/blog-categories/",
+            "method": "POST",
+            "description": "Create a new blog category",
+            "request_body": {
+              "name": "Blog Category Name"
+            },
+            "response": "Created blog category details"
+          },
+          {
+            "name": "Update Blog Category",
+            "endpoint": "/blog-categories/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update an existing blog category",
+            "request_body": {
+              "name": "Updated Blog Category Name"
+            },
+            "response": "Updated blog category details"
+          },
+          {
+            "name": "Delete Blog Category",
+            "endpoint": "/blog-categories/<id>/",
+            "method": "DELETE",
+            "description": "Delete a blog category",
+            "response": "No content (204)"
+          }
+        ]
+      },
+      {
+        "name": "Color Categories",
+        "endpoints": [
+          {
+            "name": "List All Color Categories",
+            "endpoint": "/color-categories/",
+            "method": "GET",
+            "description": "Get a list of all fabric color categories",
+            "response": "List of color categories"
+          },
+          {
+            "name": "Get Color Category",
+            "endpoint": "/color-categories/<id>/",
+            "method": "GET",
+            "description": "Get details of a specific color category",
+            "response": "Color category details"
+          },
+          {
+            "name": "Create Color Category",
+            "endpoint": "/color-categories/",
+            "method": "POST",
+            "description": "Create a new color category",
+            "request_body": {
+              "display_name": "Red",
+              "color": "#FF0000"
+            },
+            "response": "Created color category details"
+          },
+          {
+            "name": "Update Color Category",
+            "endpoint": "/color-categories/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update an existing color category",
+            "request_body": {
+              "display_name": "Dark Red",
+              "color": "#8B0000"
+            },
+            "response": "Updated color category details"
+          },
+          {
+            "name": "Delete Color Category",
+            "endpoint": "/color-categories/<id>/",
+            "method": "DELETE",
+            "description": "Delete a color category",
+            "response": "No content (204)"
+          }
+        ]
+      },
+      {
+        "name": "Events",
+        "endpoints": [
+          {
+            "name": "List All Events",
+            "endpoint": "/events/",
+            "method": "GET",
+            "description": "Get a list of all events",
+            "query_parameters": {
+              "page": "Page number for pagination"
+            },
+            "response": "List of events with pagination"
+          },
+          {
+            "name": "Get Event Details",
+            "endpoint": "/events/<id>/",
+            "method": "GET",
+            "description": "Get details of a specific event",
+            "response": "Event details"
+          },
+          {
+            "name": "Create Event",
+            "endpoint": "/events/",
+            "method": "POST",
+            "description": "Create a new event",
+            "request_body": {
+              "title": "Event Title",
+              "description": "Event Description",
+              "date": "2023-12-31",
+              "time": "18:00:00",
+              "photo": 1,
+              "location": "Event Location",
+              "url": "https://example.com/event",
+              "email": "event@example.com",
+              "phone": "1234567890"
+            },
+            "response": "Created event details"
+          },
+          {
+            "name": "Update Event",
+            "endpoint": "/events/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update an existing event",
+            "request_body": {
+              "title": "Updated Event Title",
+              "description": "Updated Event Description",
+              "date": "2023-12-31",
+              "time": "19:00:00",
+              "photo": 2,
+              "location": "Updated Event Location",
+              "url": "https://example.com/updated-event",
+              "email": "event@example.com",
+              "phone": "1234567890"
+            },
+            "response": "Updated event details"
+          },
+          {
+            "name": "Delete Event",
+            "endpoint": "/events/<id>/",
+            "method": "DELETE",
+            "description": "Delete an event",
+            "response": "No content (204)"
+          }
+        ]
+      },
+      {
+        "name": "Orders",
+        "endpoints": [
+          {
+            "name": "List All Orders",
+            "endpoint": "/orders/",
+            "method": "GET",
+            "description": "Get a list of all orders (admin) or user's orders (regular user)",
+            "query_parameters": {
+              "page": "Page number for pagination"
+            },
+            "response": "List of orders with pagination"
+          },
+          {
+            "name": "Get Order Details",
+            "endpoint": "/orders/<id>/",
+            "method": "GET",
+            "description": "Get details of a specific order",
+            "response": "Order details with items"
+          },
+          {
+            "name": "Create Order",
+            "endpoint": "/orders/",
+            "method": "POST",
+            "description": "Create a new order",
+            "request_body": {
+              "user": 1,
+              "items": [
+                {
+                  "fabric": 1,
+                  "color": "Red",
+                  "quantity": 5
+                },
+                {
+                  "fabric": 2,
+                  "color": "Blue",
+                  "quantity": 3
+                }
+              ]
+            },
+            "response": "Created order details"
+          },
+          {
+            "name": "Update Order",
+            "endpoint": "/orders/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update an existing order",
+            "request_body": {
+              "user": 1,
+              "items": [
+                {
+                  "fabric": 1,
+                  "color": "Red",
+                  "quantity": 10
+                },
+                {
+                  "fabric": 3,
+                  "color": "Green",
+                  "quantity": 2
+                }
+              ]
+            },
+            "response": "Updated order details"
+          },
+          {
+            "name": "Delete Order",
+            "endpoint": "/orders/<id>/",
+            "method": "DELETE",
+            "description": "Delete an order",
+            "response": "No content (204)"
+          },
+          {
+            "name": "Checkout",
+            "endpoint": "/checkout/",
+            "method": "POST",
+            "description": "Process checkout from cart",
+            "response": "Order details"
+          }
+        ]
+      },
+      {
+        "name": "Users",
+        "endpoints": [
+          {
+            "name": "List All Users (Admin Only)",
+            "endpoint": "/users/",
+            "method": "GET",
+            "description": "Get a list of all users (admin only)",
+            "query_parameters": {
+              "page": "Page number for pagination"
+            },
+            "response": "List of users with pagination"
+          },
+          {
+            "name": "Get User Details (Admin Only)",
+            "endpoint": "/users/<id>/",
+            "method": "GET",
+            "description": "Get details of a specific user (admin only)",
+            "response": "User details"
+          },
+          {
+            "name": "Create User (Admin Only)",
+            "endpoint": "/users/",
+            "method": "POST",
+            "description": "Create a new user (admin only)",
+            "request_body": {
+              "username": "newuser",
+              "password": "password123",
+              "name": "New User",
+              "email": "newuser@example.com",
+              "company_name": "Company Name",
+              "address": "123 Address St",
+              "phone": "1234567890",
+              "mobile_phone": "0987654321",
+              "photo": 1,
+              "auth_method": "email",
+              "is_staff": false,
+              "is_active": true
+            },
+            "response": "Created user details"
+          },
+          {
+            "name": "Update User (Admin Only)",
+            "endpoint": "/users/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update an existing user (admin only)",
+            "request_body": {
+              "name": "Updated User Name",
+              "email": "updatedemail@example.com",
+              "company_name": "Updated Company",
+              "is_staff": true
+            },
+            "response": "Updated user details"
+          },
+          {
+            "name": "Delete User (Admin Only)",
+            "endpoint": "/users/<id>/",
+            "method": "DELETE",
+            "description": "Delete a user (admin only)",
+            "response": "No content (204)"
+          },
+          {
+            "name": "Current User Profile",
+            "endpoint": "/user/",
+            "method": "GET",
+            "description": "Get current user profile",
+            "response": "User profile details"
+          },
+          {
+            "name": "Update Current User Profile",
+            "endpoint": "/user/",
+            "method": "PATCH",
+            "description": "Update current user profile",
+            "request_body": {
+              "name": "Updated Name",
+              "company_name": "Updated Company",
+              "address": "New Address",
+              "phone": "0987654321"
+            },
+            "response": "Updated user profile"
+          }
+        ]
+      },
+      {
+        "name": "Contact Details",
+        "endpoints": [
+          {
+            "name": "List Contact Details",
+            "endpoint": "/contact-details/",
+            "method": "GET",
+            "description": "Get company contact details",
+            "response": "Contact details"
+          },
+          {
+            "name": "Create Contact Details",
+            "endpoint": "/contact-details/",
+            "method": "POST",
+            "description": "Create contact details",
+            "request_body": {
+              "phone": "1234567890",
+              "email": "contact@example.com",
+              "address": "123 Company St",
+              "city": "Example City",
+              "county": "Example County",
+              "postal_code": "12345",
+              "latitude": 12.345678,
+              "longitude": 98.765432,
+              "country": "Example Country",
+              "facebook": "https://facebook.com/example",
+              "instagram": "https://instagram.com/example",
+              "whatsapp": "+1234567890",
+              "line": "example-line"
+            },
+            "response": "Created contact details"
+          },
+          {
+            "name": "Update Contact Details",
+            "endpoint": "/contact-details/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update contact details",
+            "request_body": "Same as create",
+            "response": "Updated contact details"
+          },
+          {
+            "name": "Delete Contact Details",
+            "endpoint": "/contact-details/<id>/",
+            "method": "DELETE",
+            "description": "Delete contact details",
+            "response": "No content (204)"
+          }
+        ]
+      },
+      {
+        "name": "Contact Requests",
+        "endpoints": [
+          {
+            "name": "List Contact Requests",
+            "endpoint": "/contact-requests/",
+            "method": "GET",
+            "description": "Get all contact requests (admin) or user's contact requests (regular user)",
+            "query_parameters": {
+              "page": "Page number for pagination"
+            },
+            "response": "List of contact requests with pagination"
+          },
+          {
+            "name": "Get Contact Request",
+            "endpoint": "/contact-requests/<id>/",
+            "method": "GET",
+            "description": "Get details of a specific contact request",
+            "response": "Contact request details"
+          },
+          {
+            "name": "Create Contact Request",
+            "endpoint": "/contact-requests/",
+            "method": "POST",
+            "description": "Create a new contact request",
+            "request_body": {
+              "user": 1,
+              "request_type": "general",
+              "subject": "Request Subject",
+              "message": "Request Message",
+              "related_fabric": 1,
+              "company_name": "Company Name",
+              "email": "email@example.com",
+              "sample_requested": true,
+              "related_order": 1,
+              "current_status": "new",
+              "order_status": "new"
+            },
+            "response": "Created contact request details"
+          },
+          {
+            "name": "Update Contact Request",
+            "endpoint": "/contact-requests/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update an existing contact request",
+            "request_body": {
+              "current_status": "in_progress",
+              "order_status": "processing"
+            },
+            "response": "Updated contact request details"
+          },
+          {
+            "name": "Delete Contact Request",
+            "endpoint": "/contact-requests/<id>/",
+            "method": "DELETE",
+            "description": "Delete a contact request",
+            "response": "No content (204)"
+          },
+          {
+            "name": "Submit Contact Form",
+            "endpoint": "/contact/",
+            "method": "POST",
+            "description": "Submit a contact form",
+            "request_body": {
+              "item_code": "FAB123",
+              "name": "John Doe",
+              "request_type": "general",
+              "subject": "Contact Subject",
+              "email": "johndoe@example.com",
+              "phone_number": "1234567890",
+              "company_name": "Example Company",
+              "description": "Contact message",
+              "sample_requested": false
+            },
+            "response": "Success message"
+          }
+        ]
+      },
+      {
+        "name": "Blogs",
+        "endpoints": [
+          {
+            "name": "List All Blogs",
+            "endpoint": "/blogs/",
+            "method": "GET",
+            "description": "Get a list of all blogs with filtering options",
+            "query_parameters": {
+              "category": "Filter by category ID",
+              "search": "Search in title, content, category name",
+              "ordering": "Order by created_at, title, view_count",
+              "page": "Page number for pagination"
+            },
+            "response": "List of blogs with pagination"
+          },
+          {
+            "name": "Get Blog Details",
+            "endpoint": "/blogs/<id>/",
+            "method": "GET",
+            "description": "Get details of a specific blog (increments view count)",
+            "response": "Blog details"
+          },
+          {
+            "name": "Create Blog",
+            "endpoint": "/blogs/",
+            "method": "POST",
+            "description": "Create a new blog",
+            "request_body": {
+              "title": "Blog Title",
+              "content": "Blog Content",
+              "author": 1,
+              "photo": 1,
+              "category": 1
+            },
+            "response": "Created blog details"
+          },
+          {
+            "name": "Update Blog",
+            "endpoint": "/blogs/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update an existing blog",
+            "request_body": {
+              "title": "Updated Blog Title",
+              "content": "Updated Blog Content",
+              "photo": 2,
+              "category": 2
+            },
+            "response": "Updated blog details"
+          },
+          {
+            "name": "Delete Blog",
+            "endpoint": "/blogs/<id>/",
+            "method": "DELETE",
+            "description": "Delete a blog",
+            "response": "No content (204)"
+          }
+        ]
+      },
+      {
+        "name": "Media Uploads",
+        "endpoints": [
+          {
+            "name": "List All Media",
+            "endpoint": "/media/",
+            "method": "GET",
+            "description": "Get a list of all media uploads",
+            "query_parameters": {
+              "page": "Page number for pagination"
+            },
+            "response": "List of media uploads with pagination"
+          },
+          {
+            "name": "Get Media Details",
+            "endpoint": "/media/<id>/",
+            "method": "GET",
+            "description": "Get details of a specific media upload",
+            "response": "Media upload details with URL"
+          },
+          {
+            "name": "Create Media Upload",
+            "endpoint": "/media/create/",
+            "method": "POST",
+            "description": "Upload a new media file (automatically converts images to WebP)",
+            "request_body": "Form data with 'file' field",
+            "response": "Created media upload details"
+          },
+          {
+            "name": "Delete Media Upload",
+            "endpoint": "/media/<id>/delete/",
+            "method": "DELETE",
+            "description": "Delete a media upload",
+            "response": "No content (204)"
+          }
+        ]
+      },
+      {
+        "name": "Cart",
+        "endpoints": [
+          {
+            "name": "List Cart Items",
+            "endpoint": "/cart-items/",
+            "method": "GET",
+            "description": "Get all items in the user's cart",
+            "response": "List of cart items"
+          },
+          {
+            "name": "Add Item to Cart",
+            "endpoint": "/cart-items/",
+            "method": "POST",
+            "description": "Add an item to the user's cart",
+            "request_body": {
+              "fabric_id": 1,
+              "color": "Red",
+              "quantity": 2
+            },
+            "response": "Created cart item details"
+          },
+          {
+            "name": "Update Cart Item",
+            "endpoint": "/cart-items/<id>/",
+            "method": "PUT/PATCH",
+            "description": "Update a cart item",
+            "request_body": {
+              "quantity": 5
+            },
+            "response": "Updated cart item details"
+          },
+          {
+            "name": "Remove Item from Cart",
+            "endpoint": "/cart-items/<id>/",
+            "method": "DELETE",
+            "description": "Remove an item from the cart",
+            "response": "No content (204)"
+          }
+        ]
+      },
+      {
+        "name": "Favorites",
+        "endpoints": [
+          {
+            "name": "Toggle Favorite",
+            "endpoint": "/toggle_favorite/",
+            "method": "POST",
+            "description": "Add or remove a fabric from favorites",
+            "request_body": {
+              "fabric_id": 1
+            },
+            "response": "Success message"
+          },
+          {
+            "name": "List Favorite Fabrics",
+            "endpoint": "/favorite_fabrics/",
+            "method": "GET",
+            "description": "Get all fabrics marked as favorite by the user",
+            "query_parameters": {
+              "sort_by": "Sort by 'newest' or 'oldest'",
+              "colors": "Filter by colors"
+            },
+            "response": "List of favorite fabrics"
+          }
+        ]
+      },
+      {
+        "name": "Subscription",
+        "endpoints": [
+          {
+            "name": "Subscribe to Newsletter",
+            "endpoint": "/subscribe/",
+            "method": "POST",
+            "description": "Subscribe email to newsletter",
+            "request_body": {
+              "email": "subscriber@example.com"
+            },
+            "response": "Success message"
+          }
+        ]
+      }
+    ]
+  }
+}
