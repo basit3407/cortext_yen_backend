@@ -27,4 +27,9 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(add_model_image_if_not_exists, reverse_code=migrations.RunPython.noop),
+        migrations.AddField(
+            model_name='fabriccolorimage',
+            name='model_image',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='model_fabric_images', to='cortex_yen_app.mediauploads'),
+        ),
     ]
