@@ -28,6 +28,9 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import SetPasswordForm
 from django.db.models import Count, Q
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FileSerializer(serializers.ModelSerializer):
@@ -174,16 +177,12 @@ class ContactFormSerializer(serializers.Serializer):
         return data
 
 
-from rest_framework import serializers
-from django.conf import settings
-from .models import FabricColorImage, Fabric
-
 class FabricColorImageSerializer(serializers.ModelSerializer):
     primary_image_url = serializers.SerializerMethodField()
     aux_image1_url = serializers.SerializerMethodField()
     aux_image2_url = serializers.SerializerMethodField()
     aux_image3_url = serializers.SerializerMethodField()
-    model_image_url = serializers.SerializerMethodField()  # New field
+    model_image_url = serializers.SerializerMethodField()
 
     color = serializers.CharField(source="color_category.display_name", read_only=True)
 
@@ -199,26 +198,63 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
         ]
 
     def get_full_image_url(self, file_field):
-        request = self.context.get("request")
-        if file_field:
-            return request.build_absolute_uri(file_field.url) if request else f"{settings.SITE_URL}{file_field.url}"
-        return None
+        try:
+            request = self.context.get("request")
+            if file_field and hasattr(file_field, 'file'):
+                if request:
+                    return request.build_absolute_uri(file_field.file.url)
+                return f"{settings.SITE_URL}{file_field.file.url}"
+            return None
+        except Exception as e:
+            import traceback
+            print(f"ERROR in get_full_image_url: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            return None
 
     def get_primary_image_url(self, obj):
-        return self.get_full_image_url(obj.primary_image.file)
+        try:
+            return self.get_full_image_url(obj.primary_image)
+        except Exception as e:
+            import traceback
+            print(f"ERROR in get_primary_image_url for fabric {obj.fabric.id}: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            return None
 
     def get_aux_image1_url(self, obj):
-        return self.get_full_image_url(obj.aux_image1.file) if obj.aux_image1 else None
+        try:
+            return self.get_full_image_url(obj.aux_image1)
+        except Exception as e:
+            import traceback
+            print(f"ERROR in get_aux_image1_url for fabric {obj.fabric.id}: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            return None
 
     def get_aux_image2_url(self, obj):
-        return self.get_full_image_url(obj.aux_image2.file) if obj.aux_image2 else None
+        try:
+            return self.get_full_image_url(obj.aux_image2)
+        except Exception as e:
+            import traceback
+            print(f"ERROR in get_aux_image2_url for fabric {obj.fabric.id}: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            return None
 
     def get_aux_image3_url(self, obj):
-        return self.get_full_image_url(obj.aux_image3.file) if obj.aux_image3 else None
+        try:
+            return self.get_full_image_url(obj.aux_image3)
+        except Exception as e:
+            import traceback
+            print(f"ERROR in get_aux_image3_url for fabric {obj.fabric.id}: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            return None
 
     def get_model_image_url(self, obj):
-        return self.get_full_image_url(obj.model_image.file) if obj.model_image else None
-
+        try:
+            return self.get_full_image_url(obj.model_image)
+        except Exception as e:
+            import traceback
+            print(f"ERROR in get_model_image_url for fabric {obj.fabric.id}: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            return None
 
 
 class FabricListSerializer(serializers.ModelSerializer):

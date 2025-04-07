@@ -120,6 +120,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 FRONTEND_URL = "www.corleeandco.com"
 
+# Site URL for absolute URLs in serializers
+SITE_URL = "https://www.corleeandco.com"
 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")

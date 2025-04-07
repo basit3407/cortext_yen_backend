@@ -491,11 +491,30 @@ class FabricListAPIView(generics.ListAPIView):
         responses={200: fabric_pagination_schema},
     )
     def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-        
+        try:
+            print("Starting FabricListAPIView.get()")
+            response = super().get(request, *args, **kwargs)
+            print(f"FabricListAPIView.get() completed successfully. Response status: {response.status_code}")
+            return response
+        except Exception as e:
+            import traceback
+            print(f"ERROR in FabricListAPIView.get(): {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            # Re-raise the exception to maintain the 500 error for debugging
+            raise
+
     def get_serializer_context(self):
-        context = super().get_serializer_context()
-        return context
+        try:
+            print("Starting FabricListAPIView.get_serializer_context()")
+            context = super().get_serializer_context()
+            print(f"FabricListAPIView.get_serializer_context() completed successfully")
+            return context
+        except Exception as e:
+            import traceback
+            print(f"ERROR in FabricListAPIView.get_serializer_context(): {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            # Re-raise the exception to maintain the 500 error for debugging
+            raise
 
 
 class FabricDetailAPIView(generics.RetrieveAPIView):
