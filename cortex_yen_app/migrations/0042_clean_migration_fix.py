@@ -4,12 +4,12 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-def fix_migration_issues(apps, schema_editor):
+def clean_migration_fix(apps, schema_editor):
     """
     This function will fix all migration issues by:
-    1. Ensuring the model_image field exists in FabricColorImage
-    2. Adding any missing columns to the database
-    3. Fixing any foreign key constraints
+    1. Ensuring all required columns exist in the database
+    2. Fixing any foreign key constraints
+    3. Handling any data migrations needed
     """
     if schema_editor.connection.vendor == 'postgresql':
         with schema_editor.connection.cursor() as cursor:
@@ -120,11 +120,11 @@ def fix_migration_issues(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cortex_yen_app', '0040_contactrequest_name_contactrequest_phone'),
+        ('cortex_yen_app', '0034_remove_fabriccolorimage_color'),
     ]
 
     operations = [
-        migrations.RunPython(fix_migration_issues, reverse_code=migrations.RunPython.noop),
+        migrations.RunPython(clean_migration_fix, reverse_code=migrations.RunPython.noop),
         # Add the model_image field to FabricColorImage if it doesn't exist
         migrations.AddField(
             model_name='fabriccolorimage',
@@ -191,6 +191,16 @@ class Migration(migrations.Migration):
             model_name='contactrequest',
             name='fabric_updated_at',
             field=models.DateTimeField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name='contactrequest',
+            name='name',
+            field=models.CharField(blank=True, max_length=100, null=True),
+        ),
+        migrations.AddField(
+            model_name='contactrequest',
+            name='phone',
+            field=models.CharField(blank=True, max_length=20, null=True),
         ),
         # Add all the fields to OrderItem
         migrations.AddField(
@@ -294,5 +304,10 @@ class Migration(migrations.Migration):
             model_name='mediauploads',
             name='updated_at',
             field=models.DateTimeField(auto_now=True),
+        ),
+        # Add unique constraint to FabricColorImage
+        migrations.AlterUniqueTogether(
+            name='fabriccolorimage',
+            unique_together={('fabric', 'color_category')},
         ),
     ] 
