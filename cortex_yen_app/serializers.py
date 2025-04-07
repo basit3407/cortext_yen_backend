@@ -203,7 +203,8 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
             if file_field and hasattr(file_field, 'file'):
                 # In production, use CloudFront URL
                 if not settings.DEBUG:
-                    url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{settings.MEDIA_LOCATION}/{file_field.file.name}"
+                    # Get just the file name without the full path
+                    url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{file_field.file.name}"
                     logger.debug(f"Using CloudFront URL in production: {url}")
                     return url
                 # In development, use local URL
@@ -870,7 +871,8 @@ class FabricColorImageWithIdsSerializer(serializers.ModelSerializer):
             if file_field and hasattr(file_field, 'file'):
                 # In production, use CloudFront URL
                 if not settings.DEBUG:
-                    url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{settings.MEDIA_LOCATION}/{file_field.file.name}"
+                    # Get just the file name without the full path
+                    url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{file_field.file.name}"
                     logger.debug(f"Using CloudFront URL in production: {url}")
                     return url
                 # In development, use local URL
