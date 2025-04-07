@@ -4,6 +4,41 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def add_fields_if_not_exist(apps, schema_editor):
+    # Check if the columns exist before trying to add them
+    if schema_editor.connection.vendor == 'postgresql':
+        with schema_editor.connection.cursor() as cursor:
+            # List of tables and columns to check
+            tables_and_columns = [
+                ('cortex_yen_app_contactrequest', [
+                    ('fabric_item_code', 'VARCHAR(100)'),
+                    ('fabric_title', 'VARCHAR(200)')
+                ]),
+                ('cortex_yen_app_fabric', [
+                    ('updated_at', 'TIMESTAMP WITH TIME ZONE')
+                ]),
+                ('cortex_yen_app_mediauploads', [
+                    ('created_at', 'TIMESTAMP WITH TIME ZONE'),
+                    ('updated_at', 'TIMESTAMP WITH TIME ZONE')
+                ]),
+                ('cortex_yen_app_orderitem', [
+                    ('fabric_title', 'VARCHAR(200)'),
+                    ('item_code', 'VARCHAR(100)')
+                ])
+            ]
+            
+            for table, columns in tables_and_columns:
+                for column, column_type in columns:
+                    cursor.execute(f"""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name='{table}' 
+                        AND column_name='{column}';
+                    """)
+                    if not cursor.fetchone():
+                        schema_editor.execute(f'ALTER TABLE {table} ADD COLUMN {column} {column_type};')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,45 +46,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='contactrequest',
-            name='fabric_item_code',
-            field=models.CharField(blank=True, max_length=100, null=True),
-        ),
-        migrations.AddField(
-            model_name='contactrequest',
-            name='fabric_title',
-            field=models.CharField(blank=True, max_length=200, null=True),
-        ),
+        migrations.RunPython(add_fields_if_not_exist, reverse_code=migrations.RunPython.noop),
         migrations.AddField(
             model_name='fabric',
             name='color_images',
             field=models.ManyToManyField(through='cortex_yen_app.FabricColorImage', to='cortex_yen_app.fabriccolorcategory'),
-        ),
-        migrations.AddField(
-            model_name='fabric',
-            name='updated_at',
-            field=models.DateTimeField(auto_now=True),
-        ),
-        migrations.AddField(
-            model_name='mediauploads',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='mediauploads',
-            name='updated_at',
-            field=models.DateTimeField(auto_now=True),
-        ),
-        migrations.AddField(
-            model_name='orderitem',
-            name='fabric_title',
-            field=models.CharField(blank=True, max_length=200, null=True),
-        ),
-        migrations.AddField(
-            model_name='orderitem',
-            name='item_code',
-            field=models.CharField(blank=True, max_length=100, null=True),
         ),
         migrations.AlterField(
             model_name='contactrequest',

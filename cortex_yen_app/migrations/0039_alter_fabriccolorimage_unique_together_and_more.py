@@ -5,6 +5,46 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def remove_fields_if_exist(apps, schema_editor):
+    # Check if the columns exist before trying to remove them
+    if schema_editor.connection.vendor == 'postgresql':
+        with schema_editor.connection.cursor() as cursor:
+            # List of tables and columns to check
+            tables_and_columns = [
+                ('cortex_yen_app_contactrequest', [
+                    'fabric_category_name', 'fabric_colors', 'fabric_composition',
+                    'fabric_created_at', 'fabric_description', 'fabric_finish',
+                    'fabric_images', 'fabric_is_hot_selling', 'fabric_item_code',
+                    'fabric_title', 'fabric_updated_at', 'fabric_weight'
+                ]),
+                ('cortex_yen_app_fabric', [
+                    'color_images', 'updated_at'
+                ]),
+                ('cortex_yen_app_mediauploads', [
+                    'created_at', 'updated_at'
+                ]),
+                ('cortex_yen_app_orderitem', [
+                    'aux_image1_url', 'aux_image2_url', 'aux_image3_url',
+                    'color_category_color', 'color_category_name', 'fabric_category_name',
+                    'fabric_composition', 'fabric_created_at', 'fabric_description',
+                    'fabric_finish', 'fabric_is_hot_selling', 'fabric_title',
+                    'fabric_updated_at', 'fabric_weight', 'item_code',
+                    'model_image_url', 'primary_image_url'
+                ])
+            ]
+            
+            for table, columns in tables_and_columns:
+                for column in columns:
+                    cursor.execute(f"""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name='{table}' 
+                        AND column_name='{column}';
+                    """)
+                    if cursor.fetchone():
+                        schema_editor.execute(f'ALTER TABLE {table} DROP COLUMN {column};')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -16,138 +56,7 @@ class Migration(migrations.Migration):
             name='fabriccolorimage',
             unique_together=set(),
         ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_category_name',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_colors',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_composition',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_created_at',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_description',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_finish',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_images',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_is_hot_selling',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_item_code',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_title',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_updated_at',
-        ),
-        migrations.RemoveField(
-            model_name='contactrequest',
-            name='fabric_weight',
-        ),
-        migrations.RemoveField(
-            model_name='fabric',
-            name='color_images',
-        ),
-        migrations.RemoveField(
-            model_name='fabric',
-            name='updated_at',
-        ),
-        migrations.RemoveField(
-            model_name='mediauploads',
-            name='created_at',
-        ),
-        migrations.RemoveField(
-            model_name='mediauploads',
-            name='updated_at',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='aux_image1_url',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='aux_image2_url',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='aux_image3_url',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='color_category_color',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='color_category_name',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='fabric_category_name',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='fabric_composition',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='fabric_created_at',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='fabric_description',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='fabric_finish',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='fabric_is_hot_selling',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='fabric_title',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='fabric_updated_at',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='fabric_weight',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='item_code',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='model_image_url',
-        ),
-        migrations.RemoveField(
-            model_name='orderitem',
-            name='primary_image_url',
-        ),
+        migrations.RunPython(remove_fields_if_exist, reverse_code=migrations.RunPython.noop),
         migrations.AlterField(
             model_name='contactrequest',
             name='related_fabric',
