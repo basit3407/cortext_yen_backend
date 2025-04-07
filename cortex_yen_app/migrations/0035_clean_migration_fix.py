@@ -24,6 +24,20 @@ def clean_migration_fix(apps, schema_editor):
             for constraint in cursor.fetchall():
                 schema_editor.execute(f'ALTER TABLE cortex_yen_app_fabriccolorimage DROP CONSTRAINT IF EXISTS {constraint[0]};')
 
+            # Check for existing unique constraints
+            cursor.execute("""
+                SELECT constraint_name 
+                FROM information_schema.table_constraints 
+                WHERE table_name = 'cortex_yen_app_fabriccolorimage'
+                AND constraint_type = 'UNIQUE'
+                AND constraint_name LIKE '%fabric_id_color_category%';
+            """)
+            existing_constraints = cursor.fetchall()
+            
+            # If unique constraint exists, drop it
+            for constraint in existing_constraints:
+                schema_editor.execute(f'ALTER TABLE cortex_yen_app_fabriccolorimage DROP CONSTRAINT IF EXISTS {constraint[0]};')
+
             # Now check and handle each table's columns
             tables_and_columns = {
                 'cortex_yen_app_fabriccolorimage': [
@@ -110,6 +124,23 @@ def clean_migration_fix(apps, schema_editor):
                 except Exception as e:
                     print(f"Error adding foreign key constraint: {str(e)}")
 
+            # Add unique constraint if it doesn't exist
+            cursor.execute("""
+                SELECT constraint_name 
+                FROM information_schema.table_constraints 
+                WHERE table_name = 'cortex_yen_app_fabriccolorimage'
+                AND constraint_type = 'UNIQUE'
+                AND constraint_name LIKE '%fabric_id_color_category%';
+            """)
+            if not cursor.fetchone():
+                try:
+                    schema_editor.execute("""
+                        CREATE UNIQUE INDEX cortex_yen_app_fabriccol_fabric_id_color_category_9cbcd810_uniq 
+                        ON cortex_yen_app_fabriccolorimage (fabric_id, color_category_id);
+                    """)
+                except Exception as e:
+                    print(f"Error adding unique constraint: {str(e)}")
+
 
 def reverse_migration(apps, schema_editor):
     """
@@ -126,10 +157,4 @@ class Migration(migrations.Migration):
     operations = [
         # Run the Python code to ensure all columns exist and constraints are correct
         migrations.RunPython(clean_migration_fix, reverse_code=reverse_migration),
-        
-        # Add unique constraint to FabricColorImage
-        migrations.AlterUniqueTogether(
-            name='fabriccolorimage',
-            unique_together={('fabric', 'color_category')},
-        ),
     ] 
