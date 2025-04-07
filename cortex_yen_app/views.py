@@ -87,7 +87,9 @@ from rest_framework import viewsets, filters
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.core.exceptions import ValidationError
 from django.http import Http404
+import logging
 
+logger = logging.getLogger(__name__)
 
 class GoogleLoginAPIView(APIView):
 
@@ -574,8 +576,31 @@ class FabricCreateAPIView(generics.ListCreateAPIView):
         ),
         responses={201: FabricSerializer()},
     )
+    def get(self, request, *args, **kwargs):
+        try:
+            return super().get(request, *args, **kwargs)
+        except Exception as e:
+            logger.error(f"Error in FabricCreateAPIView.get: {str(e)}")
+            return Response(
+                {"error": "An error occurred while fetching fabrics"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        try:
+            return super().post(request, *args, **kwargs)
+        except ValidationError as e:
+            logger.error(f"Validation error in FabricCreateAPIView.post: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Error in FabricCreateAPIView.post: {str(e)}")
+            return Response(
+                {"error": "An error occurred while creating the fabric"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @swagger_auto_schema(
         responses={200: fabric_pagination_schema},
@@ -620,7 +645,20 @@ class FabricUpdateAPIView(generics.UpdateAPIView):
         responses={200: FabricSerializer()},
     )
     def put(self, request, *args, **kwargs):
-        return super().put(request, *args, **kwargs)
+        try:
+            return super().put(request, *args, **kwargs)
+        except ValidationError as e:
+            logger.error(f"Validation error in FabricUpdateAPIView.put: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Error in FabricUpdateAPIView.put: {str(e)}")
+            return Response(
+                {"error": "An error occurred while updating the fabric"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -671,9 +709,16 @@ class FabricDeleteAPIView(generics.DestroyAPIView):
         try:
             return super().delete(request, *args, **kwargs)
         except ValidationError as e:
+            logger.error(f"Validation error in FabricDeleteAPIView.delete: {str(e)}")
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Error in FabricDeleteAPIView.delete: {str(e)}")
+            return Response(
+                {"error": "An error occurred while deleting the fabric"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
