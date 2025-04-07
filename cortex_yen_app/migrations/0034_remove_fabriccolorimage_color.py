@@ -2,6 +2,18 @@
 
 from django.db import migrations
 
+def remove_color_if_exists(apps, schema_editor):
+    # Check if the column exists before trying to remove it
+    if schema_editor.connection.vendor == 'postgresql':
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name='cortex_yen_app_fabriccolorimage' 
+                AND column_name='color';
+            """)
+            if cursor.fetchone():
+                schema_editor.execute('ALTER TABLE cortex_yen_app_fabriccolorimage DROP COLUMN color;')
 
 class Migration(migrations.Migration):
 
@@ -10,8 +22,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='fabriccolorimage',
-            name='color',
-        ),
+        migrations.RunPython(remove_color_if_exists, reverse_code=migrations.RunPython.noop),
     ]
