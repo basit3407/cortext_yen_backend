@@ -199,16 +199,23 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
 
     def get_full_image_url(self, file_field):
         try:
-            request = self.context.get("request")
+            logger.debug(f"Getting full image URL for file_field: {file_field}")
             if file_field and hasattr(file_field, 'file'):
+                # In production, use CloudFront URL
+                if not settings.DEBUG:
+                    url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{settings.MEDIA_LOCATION}/{file_field.file.name}"
+                    logger.debug(f"Using CloudFront URL in production: {url}")
+                    return url
+                # In development, use local URL
+                request = self.context.get("request")
                 if request:
-                    return request.build_absolute_uri(file_field.file.url)
-                return f"{settings.SITE_URL}{file_field.file.url}"
+                    url = request.build_absolute_uri(file_field.file.url)
+                    logger.debug(f"Using local URL in development: {url}")
+                    return url
+            logger.warning("No file_field or file_field has no file attribute")
             return None
         except Exception as e:
-            import traceback
-            print(f"ERROR in get_full_image_url: {str(e)}")
-            print(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"Error getting full image URL: {str(e)}", exc_info=True)
             return None
 
     def get_primary_image_url(self, obj):
@@ -858,10 +865,25 @@ class FabricColorImageWithIdsSerializer(serializers.ModelSerializer):
         ]
 
     def get_full_image_url(self, file_field):
-        request = self.context.get("request")
-        if file_field:
-            return request.build_absolute_uri(file_field.url) if request else f"{settings.SITE_URL}{file_field.url}"
-        return None
+        try:
+            logger.debug(f"Getting full image URL for file_field: {file_field}")
+            if file_field and hasattr(file_field, 'file'):
+                # In production, use CloudFront URL
+                if not settings.DEBUG:
+                    url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{settings.MEDIA_LOCATION}/{file_field.file.name}"
+                    logger.debug(f"Using CloudFront URL in production: {url}")
+                    return url
+                # In development, use local URL
+                request = self.context.get("request")
+                if request:
+                    url = request.build_absolute_uri(file_field.file.url)
+                    logger.debug(f"Using local URL in development: {url}")
+                    return url
+            logger.warning("No file_field or file_field has no file attribute")
+            return None
+        except Exception as e:
+            logger.error(f"Error getting full image URL: {str(e)}", exc_info=True)
+            return None
 
     def get_primary_image_url(self, obj):
         return self.get_full_image_url(obj.primary_image.file)
