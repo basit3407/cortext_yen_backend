@@ -4,6 +4,21 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def add_model_image_if_not_exists(apps, schema_editor):
+    # Check if the column exists before trying to add it
+    if schema_editor.connection.vendor == 'postgresql':
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name='cortex_yen_app_fabriccolorimage' 
+                AND column_name='model_image_id';
+            """)
+            if not cursor.fetchone():
+                schema_editor.execute('ALTER TABLE cortex_yen_app_fabriccolorimage ADD COLUMN model_image_id bigint NULL;')
+                schema_editor.execute('ALTER TABLE cortex_yen_app_fabriccolorimage ADD CONSTRAINT cortex_yen_app_fabriccolorimage_model_image_id_fkey FOREIGN KEY (model_image_id) REFERENCES cortex_yen_app_mediauploads(id) ON DELETE NO ACTION;')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,9 +26,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='fabriccolorimage',
-            name='model_image',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='model_image', to='cortex_yen_app.mediauploads'),
-        ),
+        migrations.RunPython(add_model_image_if_not_exists, reverse_code=migrations.RunPython.noop),
     ]
