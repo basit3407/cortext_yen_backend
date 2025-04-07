@@ -128,11 +128,7 @@ class Migration(migrations.Migration):
         migrations.RunPython(clean_migration_fix, reverse_code=reverse_migration),
         
         # Then add the Django model fields - these won't fail because the columns already exist
-        migrations.AddField(
-            model_name='fabriccolorimage',
-            name='model_image',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='model_fabric_images', to='cortex_yen_app.mediauploads'),
-        ),
+        # Skip the model_image field for FabricColorImage since it's already added in the RunPython operation
         migrations.AddField(
             model_name='contactrequest',
             name='fabric_item_code',
