@@ -3,6 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework import routers
 from .views import (
+    AnalyticsView,
     BlogCategoryViewSet,
     BlogViewSet,
     CartItemViewSet,
@@ -57,6 +58,7 @@ router.register(r"contact-requests", ContactRequestViewSet, basename="contactreq
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("analytics/", AnalyticsView.as_view(), name="analytics"),
     path("contact-details/", ContactDetailsView.as_view(), name="contact-details"),
     path("ckeditor5/", include("django_ckeditor_5.urls")),  # Include CKEditor 5 URLs
     path("register/", UserRegistrationAPIView.as_view(), name="user_registration"),

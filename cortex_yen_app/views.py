@@ -28,6 +28,7 @@ from .models import (
     ProductCategory,
     MediaUploads,
     Order,
+    OrderItem,
 )
 from .serializers import (
     BlogCategorySerializer,
@@ -82,7 +83,7 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from django.contrib.auth.admin import sensitive_post_parameters_m
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import viewsets, filters
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.core.exceptions import ValidationError
@@ -1654,12 +1655,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        user = self.request.user
-        if user.is_staff:
-            # Use prefetch_related for the items and select_related for the user
-            return Order.objects.select_related('user').prefetch_related('items__fabric').all()
-        # For regular users, filter by user and optimize with the same joins
-        return Order.objects.select_related('user').prefetch_related('items__fabric').filter(user=user)
+        # Return all orders with optimized queries
+        return Order.objects.select_related('user').prefetch_related('items__fabric').all()
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -1883,3 +1880,144 @@ class AllContactRequestsView(APIView):
         serializer = ContactRequestWithoutOrderSerializer(page, many=True)
         
         return paginator.get_paginated_response(serializer.data)
+
+
+class AdminOrderListAPIView(generics.ListAPIView):
+    """
+    API view to list all orders for admin dashboard without authentication
+    """
+    queryset = Order.objects.all().order_by('-order_date')
+    serializer_class = OrderSerializer
+    permission_classes = [AllowAny]
+    pagination_class = CustomPagination
+
+    @swagger_auto_schema(
+        operation_description="Get all orders for admin dashboard",
+        responses={
+            200: OrderSerializer(many=True),
+            400: "Bad Request",
+            500: "Internal Server Error"
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "page",
+                openapi.IN_QUERY,
+                description="Page number",
+                type=openapi.TYPE_INTEGER
+            ),
+            openapi.Parameter(
+                "page_size",
+                openapi.IN_QUERY,
+                description="Number of items per page",
+                type=openapi.TYPE_INTEGER
+            ),
+            openapi.Parameter(
+                "sort_by",
+                openapi.IN_QUERY,
+                description='Sort by "newest" or "oldest"',
+                type=openapi.TYPE_STRING,
+                enum=["newest", "oldest"]
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get sort parameter
+            sort_by = request.query_params.get('sort_by', 'newest')
+            
+            # Get queryset
+            queryset = self.get_queryset()
+            
+            # Apply sorting
+            if sort_by == 'oldest':
+                queryset = queryset.order_by('order_date')
+            else:  # default to newest
+                queryset = queryset.order_by('-order_date')
+            
+            # Apply pagination
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+            
+        except Exception as e:
+            logger.error(f"Error in AdminOrderListAPIView: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An error occurred while fetching orders"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class AnalyticsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response(
+                description="Analytics data",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'top_ordered_items': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'fabric_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    'fabric_title': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'total_orders': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                }
+                            )
+                        ),
+                        'top_ordered_categories': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'category_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    'category_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'total_orders': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                }
+                            )
+                        ),
+                        'total_fabrics': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'total_blogs': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'total_orders': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'total_users': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    }
+                )
+            )
+        }
+    )
+    def get(self, request):
+        # Get top 5 most ordered items
+        top_ordered_items = OrderItem.objects.values(
+            'fabric__id', 'fabric__title'
+        ).annotate(
+            total_orders=Count('id')
+        ).order_by('-total_orders')[:5]
+
+        # Get top 5 most ordered product categories
+        top_ordered_categories = OrderItem.objects.values(
+            'fabric__product_category__id', 'fabric__product_category__name'
+        ).annotate(
+            total_orders=Count('id')
+        ).order_by('-total_orders')[:5]
+
+        # Get total counts
+        total_fabrics = Fabric.objects.count()
+        total_blogs = Blog.objects.count()
+        total_orders = Order.objects.count()
+        total_users = CustomUser.objects.count()
+
+        return Response({
+            'top_ordered_items': list(top_ordered_items),
+            'top_ordered_categories': list(top_ordered_categories),
+            'total_fabrics': total_fabrics,
+            'total_blogs': total_blogs,
+            'total_orders': total_orders,
+            'total_users': total_users,
+        })
