@@ -808,15 +808,29 @@ class ContactRequestCreateUpdateSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False, allow_null=True)
     related_fabric = serializers.PrimaryKeyRelatedField(queryset=Fabric.objects.all(), required=False, allow_null=True)
     related_order = serializers.PrimaryKeyRelatedField(queryset=Order.objects.all(), required=False, allow_null=True)
+    status = serializers.CharField(required=False)
     
     class Meta:
         model = ContactRequest
         fields = [
             'id', 'user', 'request_number', 'request_type', 'subject', 'message',
             'created_at', 'related_fabric', 'company_name', 'email', 'name', 'phone',
-            'sample_requested', 'related_order', 'current_status', 'order_status'
+            'sample_requested', 'related_order', 'current_status', 'order_status', 'status'
         ]
         read_only_fields = ['request_number', 'created_at']
+
+    def validate(self, data):
+        request_type = data.get('request_type')
+        status = data.get('status')
+        
+        if status:
+            if request_type == 'product_request':
+                data['order_status'] = status
+            else:
+                data['current_status'] = status
+            del data['status']
+            
+        return data
 
 
 class BlogCreateUpdateSerializer(serializers.ModelSerializer):

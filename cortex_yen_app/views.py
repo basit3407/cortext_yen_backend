@@ -948,7 +948,7 @@ class ContactFormView(APIView):
             company_name = validated_data["company_name"]
             request_type = validated_data["request_type"]
             sample_requested = validated_data["sample_requested"]
-            status = request.data.get("status", "new")  # Get status from request, default to "new"
+            request_status = request.data.get("status", "new")  # Changed variable name to request_status
 
             fabric = None
             if item_code:
@@ -963,9 +963,9 @@ class ContactFormView(APIView):
             # Set the appropriate status field based on request_type
             status_data = {}
             if request_type == "product_request":
-                status_data["order_status"] = status
+                status_data["order_status"] = request_status
             else:
-                status_data["current_status"] = status
+                status_data["current_status"] = request_status
 
             contact_request = ContactRequest.objects.create(
                 user=request.user if request.user.is_authenticated else None,
@@ -991,7 +991,7 @@ class ContactFormView(APIView):
             Company Name: {company_name}
             Sample Requested: {"Yes" if sample_requested else "No"}
             Description: {message}
-            Status: {status}
+            Status: {request_status}
             """
 
             try:
@@ -1021,7 +1021,7 @@ class ContactFormView(APIView):
             Item Code: {item_code or 'N/A'}
             Company Name: {company_name}
             Sample Requested: {"Yes" if sample_requested else "No"}
-            Status: {status}
+            Status: {request_status}
 
             If you have any further questions, please don't hesitate to contact us.
 
@@ -1300,9 +1300,13 @@ class ContactRequestListCreateAPIView(
     #     serializer.save(user=self.request.user)
 
 
-class ContactRequestDetailAPIView(generics.RetrieveAPIView):
-    serializer_class = ContactRequestSerializer
+class ContactRequestDetailAPIView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return ContactRequestCreateUpdateSerializer
+        return ContactRequestSerializer
 
     @swagger_auto_schema(
         operation_description="Retrieve a specific contact request for the authenticated user",
@@ -1314,8 +1318,20 @@ class ContactRequestDetailAPIView(generics.RetrieveAPIView):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description="Update a specific contact request for the authenticated user",
+        request_body=ContactRequestCreateUpdateSerializer,
+        responses={200: ContactRequestSerializer()},
+        security=[{"token": []}],
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
     def get_queryset(self):
-        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=self.request.user)
+        user = self.request.user
+        if user.is_staff:
+            return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all()
+        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=user)
 
 
 class UserAPIView(RetrieveUpdateAPIView):
@@ -1877,6 +1893,32 @@ class AllContactRequestsView(APIView):
         page = paginator.paginate_queryset(contact_requests, request)
         
         # Serialize the paginated results without order information
+        serializer = ContactRequestWithoutOrderSerializer(page, many=True)
+        
+        return paginator.get_paginated_response(serializer.data)
+
+
+class PublicContactRequestsView(APIView):
+    """
+    View to list all contact requests without any authentication requirements.
+    """
+    permission_classes = [AllowAny]
+    pagination_class = CustomPagination
+    
+    @swagger_auto_schema(
+        operation_description="Get all contact requests without authentication",
+        operation_summary="Get all contact requests without authentication",
+        responses={200: ContactRequestWithoutOrderSerializer(many=True)}
+    )
+    def get(self, request):
+        # Get all contact requests with optimized queries
+        contact_requests = ContactRequest.objects.select_related('user', 'related_fabric').all()
+        
+        # Apply pagination
+        paginator = CustomPagination()
+        page = paginator.paginate_queryset(contact_requests, request)
+        
+        # Serialize the paginated results
         serializer = ContactRequestWithoutOrderSerializer(page, many=True)
         
         return paginator.get_paginated_response(serializer.data)

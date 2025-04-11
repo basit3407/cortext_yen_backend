@@ -42,6 +42,7 @@ from .views import (
     UserViewSet,
     checkout,
     AllContactRequestsView,
+    PublicContactRequestsView,
 )
 
 router = routers.DefaultRouter()
@@ -54,7 +55,6 @@ router.register(r"color-categories", FabricColorCategoryViewSet)
 router.register(r"orders", OrderViewSet, basename="order")
 router.register(r"users", UserViewSet, basename="user")
 router.register(r"contact-details", ContactDetailsViewSet)
-router.register(r"contact-requests", ContactRequestViewSet, basename="contactrequest")
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -64,6 +64,7 @@ urlpatterns = [
     path("register/", UserRegistrationAPIView.as_view(), name="user_registration"),
     path("login/", UserLoginAPIView.as_view(), name="user_login"),
     path("google-login/", GoogleLoginAPIView.as_view(), name="google_login"),
+    path("contact-requests/public/", PublicContactRequestsView.as_view(), name="public-contact-requests"),
     path(
         "verify-email/<str:verification_token>/",
         EmailVerificationView.as_view(),
@@ -116,6 +117,7 @@ urlpatterns = [
     path("media/<int:pk>/", MediaUploadsDetailAPIView.as_view(), name="media-detail"),
     path("media/<int:pk>/delete/", MediaUploadsDeleteAPIView.as_view(), name="media-delete"),
     path("contact-requests/all/", AllContactRequestsView.as_view(), name="all-contact-requests"),
+    path("contact-requests/viewset/", ContactRequestViewSet.as_view({'get': 'list'}), name="contact-requests-viewset"),
 ]
 
 if settings.DEBUG:
