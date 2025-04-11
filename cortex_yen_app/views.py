@@ -65,6 +65,7 @@ from .serializers import (
     FabricWithIdsSerializer,
     OrderItemCreateUpdateSerializer,
     ContactRequestWithoutOrderSerializer,
+    PublicContactRequestSerializer,
 )
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -91,6 +92,48 @@ from django.http import Http404
 import logging
 
 logger = logging.getLogger(__name__)
+
+"""
+# Pagination Information
+
+The following routes use pagination with the CustomPagination class:
+
+1. Product Categories (`/api/product-categories/`)
+2. Fabrics (`/api/fabrics/`)
+3. Blogs (`/api/blogs/`)
+4. Events (`/api/events/`)
+5. Orders (`/api/orders/`)
+6. Users (`/api/users/`)
+7. Contact Details (`/api/contact-details/`)
+8. Contact Requests (`/api/contact-requests/`)
+9. Public Contact Requests (`/api/contact-requests/public/`)
+10. Media Uploads (`/api/media-uploads/`)
+11. Admin Orders (`/api/admin/orders/`)
+
+All paginated routes accept the following query parameters:
+- `page`: Page number (default: 1)
+- `page_size`: Number of items per page (default: 10)
+
+The response will include:
+- `count`: Total number of items
+- `next`: URL to the next page (null if no next page)
+- `previous`: URL to the previous page (null if no previous page)
+- `results`: Array of items for the current page
+
+Example paginated response:
+```json
+{
+    "count": 100,
+    "next": "http://api.example.com/items/?page=2",
+    "previous": null,
+    "results": [
+        // items for current page
+    ]
+}
+```
+
+# API Routes Documentation
+"""
 
 class GoogleLoginAPIView(APIView):
 
@@ -406,6 +449,13 @@ class CustomPasswordResetConfirmView(GenericAPIView):
 
 
 class ProductCategoryListAPIView(generics.ListAPIView):
+    """
+    API endpoint to list all product categories with pagination.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    """
     serializer_class = ProductCategorySerializer
     pagination_class = CustomPagination
 
@@ -447,6 +497,19 @@ fabric_pagination_schema = openapi.Schema(
 
 
 class FabricListAPIView(generics.ListAPIView):
+    """
+    API endpoint to list all fabrics with pagination and filtering.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    
+    Filter Parameters:
+    - keyword: Search keyword
+    - sort_by: Sort by "newest" or "oldest"
+    - colors: Filter by colors
+    - item_code: Filter by item code
+    """
     queryset = Fabric.objects.all()
     serializer_class = FabricSerializer
     pagination_class = CustomPagination
@@ -838,6 +901,13 @@ class ToggleHotSellingView(generics.UpdateAPIView):
 
 
 class EventViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint to manage events with pagination.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    """
     queryset = Event.objects.all()
     pagination_class = CustomPagination
     serializer_class = EventSerializer
@@ -852,10 +922,22 @@ class EventViewSet(viewsets.ModelViewSet):
 
 
 class BlogViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint to manage blogs with pagination and filtering.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    
+    Filter Parameters:
+    - category: Filter by blog category
+    - search: Search in title, content, and category name
+    - ordering: Sort by created_at, title, or view_count
+    """
     queryset = Blog.objects.all()
     serializer_class = BlogSerializer
     pagination_class = CustomPagination
-    filterset_class = BlogFilter  # Use the custom filter class
+    filterset_class = BlogFilter
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -1423,6 +1505,13 @@ class MediaUploadsCreateAPIView(generics.CreateAPIView):
 
 
 class MediaUploadsListAPIView(generics.ListAPIView):
+    """
+    API endpoint to list all media uploads with pagination.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    """
     queryset = MediaUploads.objects.all()
     serializer_class = MediaUploadsSerializer
     pagination_class = CustomPagination
@@ -1623,6 +1712,13 @@ class FabricColorCategoryViewSet(viewsets.ModelViewSet):
 
 # Event ViewSet CRUD operations update
 class EventViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint to manage events with pagination.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    """
     queryset = Event.objects.all()
     pagination_class = CustomPagination
     
@@ -1667,6 +1763,13 @@ class EventViewSet(viewsets.ModelViewSet):
 
 # Order ViewSet for CRUD operations
 class OrderViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint to manage orders with pagination.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    """
     serializer_class = OrderSerializer
     pagination_class = CustomPagination
 
@@ -1715,6 +1818,13 @@ class OrderViewSet(viewsets.ModelViewSet):
 
 # Users ViewSet for CRUD operations
 class UserViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint to manage users with pagination.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    """
     serializer_class = UserSerializer
     pagination_class = CustomPagination
 
@@ -1774,6 +1884,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
 # ContactDetails ViewSet for CRUD operations
 class ContactDetailsViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint to manage contact details with pagination.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    """
     queryset = ContactDetails.objects.all()
     pagination_class = CustomPagination
     
@@ -1818,6 +1935,13 @@ class ContactDetailsViewSet(viewsets.ModelViewSet):
 
 # ContactRequest ViewSet for CRUD operations
 class ContactRequestViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint to manage contact requests with pagination.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    """
     pagination_class = CustomPagination
     
     def get_queryset(self):
@@ -1901,6 +2025,11 @@ class AllContactRequestsView(APIView):
 class PublicContactRequestsView(APIView):
     """
     View to list all contact requests without any authentication requirements.
+    This endpoint is publicly accessible and returns contact requests with basic information.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
     """
     permission_classes = [AllowAny]
     pagination_class = CustomPagination
@@ -1908,25 +2037,57 @@ class PublicContactRequestsView(APIView):
     @swagger_auto_schema(
         operation_description="Get all contact requests without authentication",
         operation_summary="Get all contact requests without authentication",
-        responses={200: ContactRequestWithoutOrderSerializer(many=True)}
+        responses={
+            200: PublicContactRequestSerializer(many=True),
+            500: "Internal Server Error"
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "page",
+                openapi.IN_QUERY,
+                description="Page number",
+                type=openapi.TYPE_INTEGER
+            ),
+            openapi.Parameter(
+                "page_size",
+                openapi.IN_QUERY,
+                description="Number of items per page",
+                type=openapi.TYPE_INTEGER
+            ),
+        ]
     )
     def get(self, request):
-        # Get all contact requests with optimized queries
-        contact_requests = ContactRequest.objects.select_related('user', 'related_fabric').all()
-        
-        # Apply pagination
-        paginator = CustomPagination()
-        page = paginator.paginate_queryset(contact_requests, request)
-        
-        # Serialize the paginated results
-        serializer = ContactRequestWithoutOrderSerializer(page, many=True)
-        
-        return paginator.get_paginated_response(serializer.data)
+        try:
+            # Get all contact requests with optimized queries
+            contact_requests = ContactRequest.objects.select_related('user', 'related_fabric').all()
+            
+            # Apply pagination
+            paginator = CustomPagination()
+            page = paginator.paginate_queryset(contact_requests, request)
+            
+            # Serialize the paginated results
+            serializer = PublicContactRequestSerializer(page, many=True)
+            
+            return paginator.get_paginated_response(serializer.data)
+            
+        except Exception as e:
+            logger.error(f"Error in PublicContactRequestsView: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An error occurred while fetching contact requests"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class AdminOrderListAPIView(generics.ListAPIView):
     """
-    API view to list all orders for admin dashboard without authentication
+    API view to list all orders for admin dashboard with pagination.
+    
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    
+    Filter Parameters:
+    - sort_by: Sort by "newest" or "oldest" (default: "newest")
     """
     queryset = Order.objects.all().order_by('-order_date')
     serializer_class = OrderSerializer

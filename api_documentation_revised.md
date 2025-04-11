@@ -2,6 +2,47 @@
 
 This document provides detailed information about the API endpoints for the core models in the Corlee backend application.
 
+## Pagination Information
+
+The following routes use pagination with the CustomPagination class:
+
+1. Product Categories (`/api/product-categories/`)
+2. Fabrics (`/api/fabrics/`)
+3. Blogs (`/api/blogs/`)
+4. Events (`/api/events/`)
+5. Orders (`/api/orders/`)
+6. Users (`/api/users/`)
+7. Contact Details (`/api/contact-details/`)
+8. Contact Requests (`/api/contact-requests/`)
+9. Public Contact Requests (`/api/contact-requests/public/`)
+10. Media Uploads (`/api/media-uploads/`)
+11. Admin Orders (`/api/admin/orders/`)
+
+All paginated routes accept the following query parameters:
+
+- `page`: Page number (default: 1)
+- `page_size`: Number of items per page (default: 10)
+
+The response will include:
+
+- `count`: Total number of items
+- `next`: URL to the next page (null if no next page)
+- `previous`: URL to the previous page (null if no previous page)
+- `results`: Array of items for the current page
+
+Example paginated response:
+
+```json
+{
+  "count": 100,
+  "next": "http://api.example.com/items/?page=2",
+  "previous": null,
+  "results": [
+    // items for current page
+  ]
+}
+```
+
 ## Table of Contents
 
 1. [Product Categories](#product-categories)
@@ -28,7 +69,8 @@ This document provides detailed information about the API endpoints for the core
   - `sort_by`: Sort by "newest" or "oldest"
   - `colors`: Filter by colors (array of color names) - see [Color Categories](#color-categories)
   - `item_code`: Filter by item code
-  - `page`: Page number for pagination
+  - `page`: Page number for pagination (default: 1)
+  - `page_size`: Number of items per page (default: 10)
 - **Response**: List of fabrics with pagination
 
 ### Get Fabric Details
@@ -117,7 +159,8 @@ This document provides detailed information about the API endpoints for the core
 - **Method**: GET
 - **Description**: Get a list of all product categories
 - **Query Parameters**:
-  - `page`: Page number for pagination
+  - `page`: Page number for pagination (default: 1)
+  - `page_size`: Number of items per page (default: 10)
 - **Response**: List of product categories with pagination
 
 ### Get Product Category
@@ -273,7 +316,8 @@ This document provides detailed information about the API endpoints for the core
 - **Method**: GET
 - **Description**: Get a list of all events
 - **Query Parameters**:
-  - `page`: Page number for pagination
+  - `page`: Page number for pagination (default: 1)
+  - `page_size`: Number of items per page (default: 10)
 - **Response**: List of events with pagination
 
 ### Get Event Details
@@ -340,7 +384,8 @@ This document provides detailed information about the API endpoints for the core
 - **Method**: GET
 - **Description**: Get a list of all orders (admin) or user's orders (regular user) with complete user details
 - **Query Parameters**:
-  - `page`: Page number for pagination
+  - `page`: Page number for pagination (default: 1)
+  - `page_size`: Number of items per page (default: 10)
 - **Response**: List of orders with pagination, including full user details
 
 - **Response Structure**:
@@ -587,7 +632,8 @@ This document provides detailed information about the API endpoints for the core
 - **Method**: GET
 - **Description**: Get a list of all users (admin only)
 - **Query Parameters**:
-  - `page`: Page number for pagination
+  - `page`: Page number for pagination (default: 1)
+  - `page_size`: Number of items per page (default: 10)
 - **Response**: List of users with pagination
 
 ### Get User Details (Admin Only)
@@ -674,7 +720,10 @@ This document provides detailed information about the API endpoints for the core
 - **Endpoint**: `/contact-details/`
 - **Method**: GET
 - **Description**: Get company contact details
-- **Response**: Contact details
+- **Query Parameters**:
+  - `page`: Page number for pagination (default: 1)
+  - `page_size`: Number of items per page (default: 10)
+- **Response**: Contact details with pagination
 
 ### Create Contact Details
 
@@ -704,3 +753,39 @@ This document provides detailed information about the API endpoints for the core
 ### Update Contact Details
 
 - **Endpoint**: `/contact-details/<id>/`
+
+## Blogs
+
+### List All Blogs
+
+- **Endpoint**: `/blogs/`
+- **Method**: GET
+- **Description**: Get a list of all blogs
+- **Query Parameters**:
+  - `page`: Page number for pagination (default: 1)
+  - `page_size`: Number of items per page (default: 10)
+  - `category`: Filter by blog category
+  - `search`: Search in title, content, and category name
+  - `ordering`: Sort by created_at, title, or view_count
+- **Response**: List of blogs with pagination
+
+### List All Media Uploads
+
+- **Endpoint**: `/media-uploads/`
+- **Method**: GET
+- **Description**: Get a list of all media uploads
+- **Query Parameters**:
+  - `page`: Page number for pagination (default: 1)
+  - `page_size`: Number of items per page (default: 10)
+- **Response**: List of media uploads with pagination
+
+### Admin Orders List
+
+- **Endpoint**: `/admin/orders/`
+- **Method**: GET
+- **Description**: Get a list of all orders for admin dashboard
+- **Query Parameters**:
+  - `page`: Page number for pagination (default: 1)
+  - `page_size`: Number of items per page (default: 10)
+  - `sort_by`: Sort by "newest" or "oldest" (default: "newest")
+- **Response**: List of orders with pagination

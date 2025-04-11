@@ -978,3 +978,28 @@ class FabricWithIdsSerializer(serializers.ModelSerializer):
             related_fabrics.extend(similar_to_current)
 
         return FabricListSerializer(related_fabrics[:8], many=True).data
+
+
+class PublicUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'name', 'company_name']
+
+
+class PublicContactRequestSerializer(serializers.ModelSerializer):
+    related_fabric = FabricSerializer(read_only=True)
+    status = serializers.SerializerMethodField()
+    user = PublicUserSerializer(read_only=True)
+
+    def get_status(self, obj: ContactRequest):
+        if obj.request_type == "product_request":
+            return obj.order_status
+        return obj.current_status
+
+    class Meta:
+        model = ContactRequest
+        fields = [
+            'id', 'request_number', 'request_type', 'subject', 'message',
+            'created_at', 'related_fabric', 'company_name', 'email', 'name',
+            'phone', 'sample_requested', 'status', 'user'
+        ]
