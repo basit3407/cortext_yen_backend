@@ -1343,43 +1343,41 @@ class ContactRequestListCreateAPIView(
 ):
     serializer_class = ContactRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = CustomPagination
 
     @swagger_auto_schema(
         operation_description="List all contact requests for the authenticated user",
         responses={200: ContactRequestSerializer(many=True)},
         security=[{"token": []}],
+        manual_parameters=[
+            openapi.Parameter(
+                "page",
+                openapi.IN_QUERY,
+                description="Page number",
+                type=openapi.TYPE_INTEGER
+            ),
+            openapi.Parameter(
+                "page_size",
+                openapi.IN_QUERY,
+                description="Number of items per page",
+                type=openapi.TYPE_INTEGER
+            ),
+        ]
     )
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
-
-        user_serializer = RetreveUpdateUserSerializer(request.user)
-
-        response_data = {
-            "user": user_serializer.data,
-            "contact_requests": serializer.data,
-        }
-
-        return Response(response_data)
-
-    # @swagger_auto_schema(
-    #     operation_description="Create a new contact request for the authenticated user",
-    #     request_body=ContactRequestSerializer,
-    #     responses={201: ContactRequestSerializer()},
-    #     security=[{"token": []}],
-    # )
-    # def post(self, request, *args, **kwargs):
-    #     return super().post(request, *args, **kwargs)
+        return Response(serializer.data)
 
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:
             return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all()
         return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=user)
-
-    # def perform_create(self, serializer):
-    #     serializer.save(user=self.request.user)
 
 
 class ContactRequestDetailAPIView(generics.RetrieveUpdateAPIView):
@@ -1942,6 +1940,7 @@ class ContactRequestViewSet(viewsets.ModelViewSet):
     - page: Page number (default: 1)
     - page_size: Number of items per page (default: 10)
     """
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
     
     def get_queryset(self):
@@ -1992,34 +1991,42 @@ class ContactRequestViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class AllContactRequestsView(APIView):
+class AllContactRequestsView(generics.ListAPIView):
     """
-    View to list all contact requests without order information.
-    """
-    permission_classes = [IsAuthenticated]
+    API endpoint to list all contact requests for any authenticated user.
     
+    Pagination Parameters:
+    - page: Page number (default: 1)
+    - page_size: Number of items per page (default: 10)
+    """
+    serializer_class = ContactRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = CustomPagination
+
     @swagger_auto_schema(
-        operation_description="Get all contact requests without order information",
-        operation_summary="Get all contact requests without order information",
-        responses={200: ContactRequestWithoutOrderSerializer(many=True)}
+        operation_description="List all contact requests for any authenticated user",
+        responses={200: ContactRequestSerializer(many=True)},
+        security=[{"token": []}],
+        manual_parameters=[
+            openapi.Parameter(
+                "page",
+                openapi.IN_QUERY,
+                description="Page number",
+                type=openapi.TYPE_INTEGER
+            ),
+            openapi.Parameter(
+                "page_size",
+                openapi.IN_QUERY,
+                description="Number of items per page",
+                type=openapi.TYPE_INTEGER
+            ),
+        ]
     )
-    def get(self, request):
-        user = request.user
-        
-        # Determine which records to fetch based on user permissions
-        if user.is_staff:
-            contact_requests = ContactRequest.objects.select_related('user', 'related_fabric').all()
-        else:
-            contact_requests = ContactRequest.objects.select_related('user', 'related_fabric').filter(user=user)
-        
-        # Apply pagination
-        paginator = CustomPagination()
-        page = paginator.paginate_queryset(contact_requests, request)
-        
-        # Serialize the paginated results without order information
-        serializer = ContactRequestWithoutOrderSerializer(page, many=True)
-        
-        return paginator.get_paginated_response(serializer.data)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all()
 
 
 class PublicContactRequestsView(APIView):

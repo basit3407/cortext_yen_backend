@@ -95,17 +95,9 @@ urlpatterns = [
     ),
     path("contact/", ContactFormView.as_view(), name="contact_form"),
     path("checkout/", checkout, name="checkout"),
-    path(
-        "contact-requests/",
-        ContactRequestListCreateAPIView.as_view(),
-        name="contact-requests",
-    ),
-    path(
-        "contact-requests/<int:pk>/",
-        ContactRequestDetailAPIView.as_view(),
-        name="contact-request-detail",
-    ),
-    path("user/", UserAPIView.as_view(), name="user-update"),
+    path("contact-requests/", ContactRequestListCreateAPIView.as_view(), name="contact-requests"),
+    path("contact-requests/all/", AllContactRequestsView.as_view(), name="all-contact-requests"),
+    path("contact-requests/viewset/", ContactRequestViewSet.as_view({'get': 'list'}), name="contact-requests-viewset"),
     path("subscribe/", SubscriptionView.as_view(), name="subscribe"),
     path(
         "color-categories/",
@@ -116,8 +108,6 @@ urlpatterns = [
     path("media/create/", MediaUploadsCreateAPIView.as_view(), name="media-create"),
     path("media/<int:pk>/", MediaUploadsDetailAPIView.as_view(), name="media-detail"),
     path("media/<int:pk>/delete/", MediaUploadsDeleteAPIView.as_view(), name="media-delete"),
-    path("contact-requests/all/", AllContactRequestsView.as_view(), name="all-contact-requests"),
-    path("contact-requests/viewset/", ContactRequestViewSet.as_view({'get': 'list'}), name="contact-requests-viewset"),
 ]
 
 if settings.DEBUG:
