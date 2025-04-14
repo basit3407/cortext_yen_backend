@@ -2231,3 +2231,21 @@ class AnalyticsView(APIView):
             'total_orders': total_orders,
             'total_users': total_users,
         })
+
+
+class AllContactRequestDetailAPIView(generics.RetrieveAPIView):
+    """
+    API endpoint to retrieve any contact request by ID.
+    Any authenticated user can access this endpoint to view any contact request.
+    """
+    serializer_class = ContactRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all()
+
+    @swagger_auto_schema(
+        operation_description="Retrieve any contact request by ID",
+        responses={200: ContactRequestSerializer()},
+        security=[{"token": []}],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

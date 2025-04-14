@@ -43,6 +43,7 @@ from .views import (
     checkout,
     AllContactRequestsView,
     PublicContactRequestsView,
+    AllContactRequestDetailAPIView,
 )
 
 router = routers.DefaultRouter()
@@ -97,6 +98,7 @@ urlpatterns = [
     path("checkout/", checkout, name="checkout"),
     path("contact-requests/", ContactRequestListCreateAPIView.as_view(), name="contact-requests"),
     path("contact-requests/all/", AllContactRequestsView.as_view(), name="all-contact-requests"),
+    path("contact-requests/all/<int:pk>/", AllContactRequestDetailAPIView.as_view(), name="all-contact-request-detail"),
     path("contact-requests/viewset/", ContactRequestViewSet.as_view({'get': 'list'}), name="contact-requests-viewset"),
     path("subscribe/", SubscriptionView.as_view(), name="subscribe"),
     path(
