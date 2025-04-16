@@ -1521,7 +1521,7 @@ class MediaUploadsListAPIView(generics.ListAPIView):
     - page: Page number (default: 1)
     - page_size: Number of items per page (default: 10)
     """
-    queryset = MediaUploads.objects.all()
+    queryset = MediaUploads.objects.all().order_by('-id')  # Order by newest first
     serializer_class = MediaUploadsSerializer
     pagination_class = CustomPagination
     
