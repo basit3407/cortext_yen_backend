@@ -510,7 +510,7 @@ class FabricListAPIView(generics.ListAPIView):
     - colors: Filter by colors
     - item_code: Filter by item code
     """
-    queryset = Fabric.objects.all()
+    queryset = Fabric.objects.all().order_by('-created_at')  # Sort by recently created
     serializer_class = FabricSerializer
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
@@ -910,7 +910,18 @@ class EventViewSet(viewsets.ModelViewSet):
     """
     queryset = Event.objects.all()
     pagination_class = CustomPagination
-    serializer_class = EventSerializer
+    
+    def get_queryset(self):
+        # Filter out past events and sort by date (upcoming recent on top)
+        from django.utils import timezone
+        return Event.objects.filter(
+            date__gte=timezone.now().date()
+        ).order_by('date', 'time')
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return EventCreateUpdateSerializer
+        return EventSerializer
 
     @swagger_auto_schema(responses={200: EventSerializer(many=True)})
     def list(self, request, *args, **kwargs):
@@ -1555,7 +1566,7 @@ class MediaUploadsDeleteAPIView(generics.DestroyAPIView):
 
 # ProductCategory ViewSet for CRUD operations
 class ProductCategoryViewSet(viewsets.ModelViewSet):
-    queryset = ProductCategory.objects.all()
+    queryset = ProductCategory.objects.all().order_by('name')  # Sort alphabetically
     serializer_class = ProductCategorySerializer
     pagination_class = CustomPagination
 
@@ -1655,7 +1666,7 @@ class BlogCategoryViewSet(viewsets.ModelViewSet):
 
 # ColorCategory ViewSet for CRUD operations
 class FabricColorCategoryViewSet(viewsets.ModelViewSet):
-    queryset = FabricColorCategory.objects.all()
+    queryset = FabricColorCategory.objects.all().order_by('display_name')  # Sort alphabetically
     serializer_class = FabricColorCategorySerializer
 
     def get_serializer_class(self):
@@ -1720,6 +1731,13 @@ class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     pagination_class = CustomPagination
     
+    def get_queryset(self):
+        # Filter out past events and sort by date (upcoming recent on top)
+        from django.utils import timezone
+        return Event.objects.filter(
+            date__gte=timezone.now().date()
+        ).order_by('date', 'time')
+    
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return EventCreateUpdateSerializer
@@ -1772,8 +1790,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        # Return all orders with optimized queries
-        return Order.objects.select_related('user').prefetch_related('items__fabric').all()
+        # Return all orders with optimized queries, sorted by order date
+        return Order.objects.select_related('user').prefetch_related('items__fabric').all().order_by('-order_date')
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -1827,7 +1845,7 @@ class UserViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return CustomUser.objects.all()
+        return CustomUser.objects.all().order_by('-date_joined')  # Sort by recently created
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -1993,20 +2011,19 @@ class ContactRequestViewSet(viewsets.ModelViewSet):
 
 class AllContactRequestsView(generics.ListAPIView):
     """
-    API endpoint to list all contact requests for any authenticated user.
+    API endpoint to list all contact requests for any user.
     
     Pagination Parameters:
     - page: Page number (default: 1)
     - page_size: Number of items per page (default: 10)
     """
     serializer_class = ContactRequestSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]  # Changed from IsAuthenticated to AllowAny
     pagination_class = CustomPagination
 
     @swagger_auto_schema(
-        operation_description="List all contact requests for any authenticated user",
+        operation_description="List all contact requests for any user",
         responses={200: ContactRequestSerializer(many=True)},
-        security=[{"token": []}],
         manual_parameters=[
             openapi.Parameter(
                 "page",
