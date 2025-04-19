@@ -27,10 +27,12 @@ class MediaUploads(models.Model):
         img.save(output, format="WEBP", quality=85)
         output.seek(0)
 
-        # Change the file field to the new image
+        # Change the file field to the new image with proper content type
         self.file = ContentFile(
-            output.read(), name=os.path.splitext(self.file.name)[0] + ".webp"
+            output.read(), 
+            name=os.path.splitext(self.file.name)[0] + ".webp"
         )
+        self.file.content_type = 'image/webp'  # Set the correct content type
 
         super().save(*args, **kwargs)
 
