@@ -729,6 +729,26 @@ class FabricUpdateAPIView(generics.UpdateAPIView):
     )
     def put(self, request, *args, **kwargs):
         try:
+            # Get the fabric instance
+            fabric = self.get_object()
+            
+            # Process color images to handle null values
+            if 'color_images' in request.data:
+                for color_image_data in request.data['color_images']:
+                    # Check each image field for null values
+                    image_fields = ['primary_image', 'aux_image1', 'aux_image2', 'aux_image3', 'model_image']
+                    for field in image_fields:
+                        if field in color_image_data and color_image_data[field] is None:
+                            # Find the color image with this field
+                            color_image = fabric.color_images.filter(
+                                color_category_id=color_image_data['color_category']
+                            ).first()
+                            
+                            if color_image:
+                                # Set the field to None in the database
+                                setattr(color_image, field, None)
+                                color_image.save()
+            
             return super().put(request, *args, **kwargs)
         except ValidationError as e:
             logger.error(f"Validation error in FabricUpdateAPIView.put: {str(e)}")
@@ -775,7 +795,40 @@ class FabricUpdateAPIView(generics.UpdateAPIView):
         responses={200: FabricSerializer()},
     )
     def patch(self, request, *args, **kwargs):
-        return super().patch(request, *args, **kwargs)
+        try:
+            # Get the fabric instance
+            fabric = self.get_object()
+            
+            # Process color images to handle null values
+            if 'color_images' in request.data:
+                for color_image_data in request.data['color_images']:
+                    # Check each image field for null values
+                    image_fields = ['primary_image', 'aux_image1', 'aux_image2', 'aux_image3', 'model_image']
+                    for field in image_fields:
+                        if field in color_image_data and color_image_data[field] is None:
+                            # Find the color image with this field
+                            color_image = fabric.color_images.filter(
+                                color_category_id=color_image_data['color_category']
+                            ).first()
+                            
+                            if color_image:
+                                # Set the field to None in the database
+                                setattr(color_image, field, None)
+                                color_image.save()
+            
+            return super().patch(request, *args, **kwargs)
+        except ValidationError as e:
+            logger.error(f"Validation error in FabricUpdateAPIView.patch: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Error in FabricUpdateAPIView.patch: {str(e)}")
+            return Response(
+                {"error": "An error occurred while updating the fabric"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class FabricDeleteAPIView(generics.DestroyAPIView):
@@ -1558,10 +1611,90 @@ class MediaUploadsDeleteAPIView(generics.DestroyAPIView):
     serializer_class = MediaUploadsSerializer
     
     @swagger_auto_schema(
-        responses={204: "No Content"},
+        responses={
+            204: "No Content",
+            400: "Bad Request - Image is in use",
+            404: "Not Found",
+            500: "Internal Server Error"
+        }
     )
     def delete(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
+        try:
+            media_upload = self.get_object()
+            
+            # Check if image is being used in any fabric color images
+            if media_upload.primary_images.exists():
+                return Response(
+                    {"error": "Cannot delete image as it is being used as a primary image in fabrics"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if media_upload.aux_image1.exists():
+                return Response(
+                    {"error": "Cannot delete image as it is being used as an auxiliary image 1 in fabrics"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if media_upload.aux_image2.exists():
+                return Response(
+                    {"error": "Cannot delete image as it is being used as an auxiliary image 2 in fabrics"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if media_upload.aux_image3.exists():
+                return Response(
+                    {"error": "Cannot delete image as it is being used as an auxiliary image 3 in fabrics"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if media_upload.model_image.exists():
+                return Response(
+                    {"error": "Cannot delete image as it is being used as a model image in fabrics"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Check if image is being used in product categories
+            if media_upload.productcategory_set.exists():
+                return Response(
+                    {"error": "Cannot delete image as it is being used in product categories"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Check if image is being used in blogs
+            if media_upload.blog_photos.exists():
+                return Response(
+                    {"error": "Cannot delete image as it is being used in blogs"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Check if image is being used in events
+            if media_upload.event_photos.exists():
+                return Response(
+                    {"error": "Cannot delete image as it is being used in events"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Check if image is being used in user photos
+            if media_upload.user_photos.exists():
+                return Response(
+                    {"error": "Cannot delete image as it is being used in user profiles"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # If no usage found, proceed with deletion
+            self.perform_destroy(media_upload)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+            
+        except Http404:
+            return Response(
+                {"error": "Media upload not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 # ProductCategory ViewSet for CRUD operations
