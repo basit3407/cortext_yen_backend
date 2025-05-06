@@ -90,6 +90,7 @@ from rest_framework.generics import RetrieveUpdateAPIView
 from django.core.exceptions import ValidationError
 from django.http import Http404
 import logging
+from rest_framework.decorators import action
 
 logger = logging.getLogger(__name__)
 
@@ -461,9 +462,8 @@ class ProductCategoryListAPIView(generics.ListAPIView):
 
     @swagger_auto_schema(responses={200: ProductCategorySerializer(many=True)})
     def get_queryset(self):
-        return ProductCategory.objects.annotate(
-            total_orders=Count("fabric__order")
-        ).order_by("-total_orders")
+        # Categories are ordered by the 'order' field as defined in the model's Meta class
+        return ProductCategory.objects.all()
         
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -506,16 +506,22 @@ class FabricListAPIView(generics.ListAPIView):
     
     Filter Parameters:
     - keyword: Search keyword
-    - sort_by: Sort by "newest" or "oldest"
+    - sort_by: Sort by "newest", "oldest", or "most_requested" (default: "newest")
     - colors: Filter by colors
     - item_code: Filter by item code
     """
     queryset = Fabric.objects.all().order_by('-created_at')  # Sort by recently created
     serializer_class = FabricSerializer
     pagination_class = CustomPagination
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_class = FabricFilter
+    ordering = ['-created_at']  # Default ordering
 
+    def get_queryset(self):
+        # Always start with the newest-to-oldest order (most recent first)
+        queryset = Fabric.objects.all().order_by('-created_at')
+        return queryset
+    
     @swagger_auto_schema(
         manual_parameters=[
             openapi.Parameter(
@@ -527,9 +533,9 @@ class FabricListAPIView(generics.ListAPIView):
             openapi.Parameter(
                 "sort_by",
                 openapi.IN_QUERY,
-                description='Sort by "newest" or "oldest"',
+                description='Sort by "newest", "oldest", or "most_requested"',
                 type=openapi.TYPE_STRING,
-                enum=["newest", "oldest"],
+                enum=["newest", "oldest", "most_requested"],
             ),
             openapi.Parameter(
                 "colors",
@@ -556,29 +562,20 @@ class FabricListAPIView(generics.ListAPIView):
     )
     def get(self, request, *args, **kwargs):
         try:
-            print("Starting FabricListAPIView.get()")
+            # Add logging to debug the query parameters
+            logger.info(f"Fabric list query params: {request.query_params}")
             response = super().get(request, *args, **kwargs)
-            print(f"FabricListAPIView.get() completed successfully. Response status: {response.status_code}")
             return response
         except Exception as e:
             import traceback
-            print(f"ERROR in FabricListAPIView.get(): {str(e)}")
-            print(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"ERROR in FabricListAPIView.get(): {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             # Re-raise the exception to maintain the 500 error for debugging
             raise
-
+    
     def get_serializer_context(self):
-        try:
-            print("Starting FabricListAPIView.get_serializer_context()")
-            context = super().get_serializer_context()
-            print(f"FabricListAPIView.get_serializer_context() completed successfully")
-            return context
-        except Exception as e:
-            import traceback
-            print(f"ERROR in FabricListAPIView.get_serializer_context(): {str(e)}")
-            print(f"Traceback: {traceback.format_exc()}")
-            # Re-raise the exception to maintain the 500 error for debugging
-            raise
+        context = super().get_serializer_context()
+        return context
 
 
 class FabricDetailAPIView(generics.RetrieveAPIView):
@@ -671,17 +668,52 @@ class FabricCreateAPIView(generics.ListCreateAPIView):
     
     def post(self, request, *args, **kwargs):
         try:
+            serializer = self.get_serializer(data=request.data)
+            if not serializer.is_valid():
+                logger.error(f"Validation error in FabricCreateAPIView.post: {serializer.errors}")
+                
+                # Create a more user-friendly error response
+                error_messages = {
+                    'detail': 'There were errors in your fabric submission.',
+                    'errors': {}
+                }
+                
+                # Process each error type with more descriptive messages
+                for field, errors in serializer.errors.items():
+                    error_message = str(errors[0]) if errors else "Invalid input."
+                    
+                    # Provide more specific guidance based on error type
+                    if field == 'description' and 'blank' in error_message:
+                        error_message = "Please provide a description for the fabric."
+                    elif field == 'composition' and 'blank' in error_message:
+                        error_message = "Please specify the fabric composition (e.g., 100% cotton)."
+                    elif field == 'weight' and 'blank' in error_message:
+                        error_message = "Please provide the fabric weight (e.g., 200 g/m²)."
+                    elif field == 'finish' and 'blank' in error_message:
+                        error_message = "Please specify the fabric finish (e.g., matte, glossy)."
+                    elif field == 'item_code' and 'unique' in error_message:
+                        error_message = "This item code is already in use. Please provide a unique item code."
+                    elif field == 'item_code' and 'invalid_item_code' in error_message:
+                        error_message = "Item code must contain only letters and numbers, no special characters."
+                    
+                    error_messages['errors'][field] = error_message
+                
+                return Response(
+                    error_messages,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             return super().post(request, *args, **kwargs)
         except ValidationError as e:
             logger.error(f"Validation error in FabricCreateAPIView.post: {str(e)}")
             return Response(
-                {"error": str(e)},
+                {"detail": "Validation error", "errors": {"general": str(e)}},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             logger.error(f"Error in FabricCreateAPIView.post: {str(e)}")
             return Response(
-                {"error": "An error occurred while creating the fabric"},
+                {"detail": "An error occurred while creating the fabric", "errors": {"general": "An unexpected error occurred. Please try again or contact support."}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
@@ -749,17 +781,53 @@ class FabricUpdateAPIView(generics.UpdateAPIView):
                                 setattr(color_image, field, None)
                                 color_image.save()
             
+            # Validate input data before passing to super method
+            serializer = self.get_serializer(fabric, data=request.data)
+            if not serializer.is_valid():
+                logger.error(f"Validation error in FabricUpdateAPIView.put: {serializer.errors}")
+                
+                # Create a more user-friendly error response
+                error_messages = {
+                    'detail': 'There were errors in your fabric update.',
+                    'errors': {}
+                }
+                
+                # Process each error type with more descriptive messages
+                for field, errors in serializer.errors.items():
+                    error_message = str(errors[0]) if errors else "Invalid input."
+                    
+                    # Provide more specific guidance based on error type
+                    if field == 'description' and 'blank' in error_message:
+                        error_message = "Please provide a description for the fabric."
+                    elif field == 'composition' and 'blank' in error_message:
+                        error_message = "Please specify the fabric composition (e.g., 100% cotton)."
+                    elif field == 'weight' and 'blank' in error_message:
+                        error_message = "Please provide the fabric weight (e.g., 200 g/m²)."
+                    elif field == 'finish' and 'blank' in error_message:
+                        error_message = "Please specify the fabric finish (e.g., matte, glossy)."
+                    elif field == 'item_code' and 'unique' in error_message:
+                        error_message = "This item code is already in use. Please provide a unique item code."
+                    elif field == 'item_code' and 'invalid_item_code' in error_message:
+                        error_message = "Item code must contain only letters and numbers, no special characters."
+                    
+                    error_messages['errors'][field] = error_message
+                
+                return Response(
+                    error_messages,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             return super().put(request, *args, **kwargs)
         except ValidationError as e:
             logger.error(f"Validation error in FabricUpdateAPIView.put: {str(e)}")
             return Response(
-                {"error": str(e)},
+                {"detail": "Validation error", "errors": {"general": str(e)}},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             logger.error(f"Error in FabricUpdateAPIView.put: {str(e)}")
             return Response(
-                {"error": "An error occurred while updating the fabric"},
+                {"detail": "An error occurred while updating the fabric", "errors": {"general": "An unexpected error occurred. Please try again or contact support."}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -816,17 +884,53 @@ class FabricUpdateAPIView(generics.UpdateAPIView):
                                 setattr(color_image, field, None)
                                 color_image.save()
             
+            # Validate input data before passing to super method
+            serializer = self.get_serializer(fabric, data=request.data, partial=True)
+            if not serializer.is_valid():
+                logger.error(f"Validation error in FabricUpdateAPIView.patch: {serializer.errors}")
+                
+                # Create a more user-friendly error response
+                error_messages = {
+                    'detail': 'There were errors in your fabric update.',
+                    'errors': {}
+                }
+                
+                # Process each error type with more descriptive messages
+                for field, errors in serializer.errors.items():
+                    error_message = str(errors[0]) if errors else "Invalid input."
+                    
+                    # Provide more specific guidance based on error type
+                    if field == 'description' and 'blank' in error_message:
+                        error_message = "Please provide a description for the fabric."
+                    elif field == 'composition' and 'blank' in error_message:
+                        error_message = "Please specify the fabric composition (e.g., 100% cotton)."
+                    elif field == 'weight' and 'blank' in error_message:
+                        error_message = "Please provide the fabric weight (e.g., 200 g/m²)."
+                    elif field == 'finish' and 'blank' in error_message:
+                        error_message = "Please specify the fabric finish (e.g., matte, glossy)."
+                    elif field == 'item_code' and 'unique' in error_message:
+                        error_message = "This item code is already in use. Please provide a unique item code."
+                    elif field == 'item_code' and 'invalid_item_code' in error_message:
+                        error_message = "Item code must contain only letters and numbers, no special characters."
+                    
+                    error_messages['errors'][field] = error_message
+                
+                return Response(
+                    error_messages,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             return super().patch(request, *args, **kwargs)
         except ValidationError as e:
             logger.error(f"Validation error in FabricUpdateAPIView.patch: {str(e)}")
             return Response(
-                {"error": str(e)},
+                {"detail": "Validation error", "errors": {"general": str(e)}},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             logger.error(f"Error in FabricUpdateAPIView.patch: {str(e)}")
             return Response(
-                {"error": "An error occurred while updating the fabric"},
+                {"detail": "An error occurred while updating the fabric", "errors": {"general": "An unexpected error occurred. Please try again or contact support."}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -846,14 +950,33 @@ class FabricDeleteAPIView(generics.DestroyAPIView):
             return super().delete(request, *args, **kwargs)
         except ValidationError as e:
             logger.error(f"Validation error in FabricDeleteAPIView.delete: {str(e)}")
+            error_message = str(e)
+            
+            # Create more user-friendly error messages for specific cases
+            if "being used in" in error_message and "order" in error_message:
+                detail = "This fabric cannot be deleted because it is in use"
+                message = "This fabric is currently associated with one or more orders. Please remove it from all orders before deletion."
+            elif "being used in" in error_message and "contact request" in error_message:
+                detail = "This fabric cannot be deleted because it is in use"
+                message = "This fabric is referenced in one or more contact requests. It cannot be deleted at this time."
+            else:
+                detail = "Validation error"
+                message = error_message
+                
             return Response(
-                {"error": str(e)},
+                {
+                    "detail": detail,
+                    "errors": {"general": message}
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             logger.error(f"Error in FabricDeleteAPIView.delete: {str(e)}")
             return Response(
-                {"error": "An error occurred while deleting the fabric"},
+                {
+                    "detail": "An error occurred while deleting the fabric",
+                    "errors": {"general": "An unexpected error occurred. Please try again or contact support."}
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -1008,7 +1131,11 @@ class BlogViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     ]
     filterset_fields = ["category"]
-    search_fields = ["title", "content", "category__name"]
+    search_fields = [
+        "title", "title_mandarin",
+        "content", "content_mandarin",
+        "category__name", "category__name_mandarin"
+    ]
     ordering_fields = [
         "created_at",
         "title",
@@ -1699,7 +1826,7 @@ class MediaUploadsDeleteAPIView(generics.DestroyAPIView):
 
 # ProductCategory ViewSet for CRUD operations
 class ProductCategoryViewSet(viewsets.ModelViewSet):
-    queryset = ProductCategory.objects.all().order_by('name')  # Sort alphabetically
+    queryset = ProductCategory.objects.all().order_by('order')  # Sort by order
     serializer_class = ProductCategorySerializer
     pagination_class = CustomPagination
 
@@ -1751,6 +1878,76 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+            
+    @swagger_auto_schema(
+        method='post',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['categories'],
+            properties={
+                'categories': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        required=['id', 'order'],
+                        properties={
+                            'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Category ID'),
+                            'order': openapi.Schema(type=openapi.TYPE_INTEGER, description='New order position')
+                        }
+                    ),
+                    description='List of categories with their new order positions'
+                )
+            }
+        ),
+        responses={
+            200: openapi.Response('Categories reordered successfully'),
+            400: 'Invalid input data',
+            404: 'Category not found'
+        }
+    )
+    @action(detail=False, methods=['post'], url_path='reorder')
+    def reorder(self, request):
+        """
+        Reorder product categories based on provided order positions.
+        """
+        categories_data = request.data.get('categories', [])
+        
+        if not categories_data:
+            return Response(
+                {"error": "No categories provided for reordering"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Validate the input data
+        for category_data in categories_data:
+            if 'id' not in category_data or 'order' not in category_data:
+                return Response(
+                    {"error": "Each category must have 'id' and 'order' fields"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            if not isinstance(category_data['order'], int):
+                return Response(
+                    {"error": "Order value must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Update each category's order
+        for category_data in categories_data:
+            try:
+                category = ProductCategory.objects.get(id=category_data['id'])
+                category.order = category_data['order']
+                category.save()
+            except ProductCategory.DoesNotExist:
+                return Response(
+                    {"error": f"Category with ID {category_data['id']} not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        
+        return Response(
+            {"message": "Categories reordered successfully"},
+            status=status.HTTP_200_OK
+        )
 
 
 # BlogCategory ViewSet for CRUD operations
@@ -2149,6 +2346,9 @@ class AllContactRequestsView(generics.ListAPIView):
     Pagination Parameters:
     - page: Page number (default: 1)
     - page_size: Number of items per page (default: 10)
+    
+    Filter Parameters:
+    - dashboard: When set to 'true', excludes product_request type contact requests
     """
     serializer_class = ContactRequestSerializer
     permission_classes = [permissions.AllowAny]  # Changed from IsAuthenticated to AllowAny
@@ -2170,13 +2370,39 @@ class AllContactRequestsView(generics.ListAPIView):
                 description="Number of items per page",
                 type=openapi.TYPE_INTEGER
             ),
+            openapi.Parameter(
+                "dashboard",
+                openapi.IN_QUERY,
+                description="When set to 'true', excludes product_request type contact requests",
+                type=openapi.TYPE_BOOLEAN
+            ),
         ]
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all()
+        # Start with the base queryset
+        queryset = ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all().order_by('-created_at')
+        
+        # Check if dashboard parameter is true
+        dashboard_param = self.request.query_params.get('dashboard', '')
+        logger.info(f"Dashboard parameter: {dashboard_param}")
+        
+        # Handle different ways true could be passed
+        is_dashboard = dashboard_param.lower() in ['true', '1', 'yes']
+        logger.info(f"Is dashboard view: {is_dashboard}")
+        
+        if is_dashboard:
+            logger.info("Filtering out product_request type contact requests")
+            # Use direct string matching to ensure correct filtering
+            queryset = queryset.exclude(request_type__exact='product_request')
+            
+            # Check if filtering worked
+            all_types = list(queryset.values_list('request_type', flat=True).distinct())
+            logger.info(f"Request types after filtering: {all_types}")
+            
+        return queryset
 
 
 class PublicContactRequestsView(APIView):

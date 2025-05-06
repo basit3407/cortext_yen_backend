@@ -1,7 +1,10 @@
 import django_filters
 from django_filters import rest_framework as filters
-from .models import Fabric, ProductCategory, Blog, FabricColorCategory
+from .models import Fabric, ProductCategory, Blog, FabricColorCategory, BlogCategory
 from django.db.models import Count, Q
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BlogFilter(filters.FilterSet):
@@ -12,8 +15,31 @@ class BlogFilter(filters.FilterSet):
         fields = ["category"]
 
     def filter_by_category(self, queryset, name, value):
+        if not value:
+            return queryset
+        
+        logger.info(f"BlogFilter filtering by category: '{value}'")
         categories = value.split(",")
-        return queryset.filter(category__name__in=categories).distinct()
+        logger.info(f"Searching for categories: {categories}")
+        
+        # First try to find categories matching the English names
+        english_matches = list(BlogCategory.objects.filter(name__in=categories).values_list('name', flat=True))
+        if english_matches:
+            logger.info(f"Found matching English category names: {english_matches}")
+            
+        # Then try to find categories matching the Mandarin names
+        mandarin_matches = list(BlogCategory.objects.filter(name_mandarin__in=categories).values_list('name_mandarin', flat=True))
+        if mandarin_matches:
+            logger.info(f"Found matching Mandarin category names: {mandarin_matches}")
+            
+        # Filter by both English and Mandarin category names
+        result = queryset.filter(
+            Q(category__name__in=categories) | 
+            Q(category__name_mandarin__in=categories)
+        ).distinct()
+        
+        logger.info(f"Query returned {result.count()} results")
+        return result
 
 
 class FabricFilter(filters.FilterSet):
@@ -33,21 +59,49 @@ class FabricFilter(filters.FilterSet):
         if not value:
             return queryset
             
-        if value == "best_selling":
-            return Fabric.objects.annotate(
-                num_orders=Count('orderitem_set')
-            ).order_by("-num_orders", "-is_hot_selling")
+        logger.info(f"FabricFilter filtering by keyword: '{value}'")
             
-        # Check if the keyword matches a product category name
+        if value == "best_selling":
+            # Return only fabrics marked as hot selling
+            logger.info("Filtering for best selling fabrics")
+            queryset = queryset.filter(is_hot_selling=True)
+            
+            # Let the sort_by parameter handle sorting (will be applied later)
+            return queryset
+            
+        # Check if the keyword matches a product category name or mandarin name
         try:
-            category = ProductCategory.objects.get(name__iexact=value)
-            return queryset.filter(product_category=category)
-        except ProductCategory.DoesNotExist:
-            # If not a product category, search in fabric fields
+            # Check for exact match in English name
+            english_category = ProductCategory.objects.filter(name__iexact=value).first()
+            if english_category:
+                logger.info(f"Found matching English category name: {english_category.name}")
+                return queryset.filter(product_category=english_category)
+                
+            # Check for exact match in Mandarin name
+            mandarin_category = ProductCategory.objects.filter(name_mandarin__iexact=value).first()
+            if mandarin_category:
+                logger.info(f"Found matching Mandarin category name: {mandarin_category.name_mandarin} (English: {mandarin_category.name})")
+                return queryset.filter(product_category=mandarin_category)
+            
+            # If no exact match found, search in other fabric fields
+            logger.info(f"No matching category found for '{value}', searching in fabric fields")
             return queryset.filter(
                 Q(title__icontains=value) |
+                Q(title_mandarin__icontains=value) |
                 Q(description__icontains=value) |
+                Q(description_mandarin__icontains=value) |
                 Q(composition__icontains=value) |
+                Q(composition_mandarin__icontains=value) |
+                Q(item_code__icontains=value)
+            )
+        except Exception as e:
+            logger.error(f"Error in filter_by_keyword: {str(e)}")
+            # Fallback to basic filtering if any error occurs
+            return queryset.filter(
+                Q(title__icontains=value) |
+                Q(title_mandarin__icontains=value) |
+                Q(description__icontains=value) |
+                Q(description_mandarin__icontains=value) |
                 Q(item_code__icontains=value)
             )
 
@@ -67,19 +121,22 @@ class FabricFilter(filters.FilterSet):
         ).distinct()
         
     def apply_sorting(self, queryset, name, value):
-        if not value:
-            # Default to newest if no sorting specified
+        # Log the sorting parameter for debugging
+        logger.info(f"Applying sorting with value: '{value}'")
+        
+        if not value or value.lower() == 'newest':
+            # Default to newest if no sorting specified or if 'newest' is explicitly requested
             return queryset.order_by('-created_at')
             
-        if value == 'newest':
-            return queryset.order_by('-created_at')
-        elif value == 'oldest':
+        elif value.lower() == 'oldest':
             return queryset.order_by('created_at')
-        elif value == 'most_requested':
+            
+        elif value.lower() == 'most_requested':
             # Annotate with order count and sort
             return queryset.annotate(
                 num_orders=Count('orderitem_set')
             ).order_by('-num_orders')
         
-        # Default to newest if invalid sort option
+        # Default to newest for any unrecognized sort option
+        logger.warning(f"Unrecognized sort_by value: '{value}', defaulting to newest")
         return queryset.order_by('-created_at')

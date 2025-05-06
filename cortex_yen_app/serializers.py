@@ -143,7 +143,7 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductCategory
-        fields = ["id", "name", "description", "image_url"]
+        fields = ["id", "name", "name_mandarin", "description", "description_mandarin", "image_url", "order"]
 
     def get_image_url(self, obj):
         if obj.image:
@@ -184,12 +184,16 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
     aux_image3_url = serializers.SerializerMethodField()
     model_image_url = serializers.SerializerMethodField()
 
-    color = serializers.CharField(source="color_category.display_name", read_only=True)
+    color = serializers.CharField(source="color_category.color", read_only=True, allow_null=True)
+    color_display_name = serializers.CharField(source="color_category.display_name", read_only=True)
+    color_mandarin = serializers.CharField(source="color_category.display_name_mandarin", read_only=True, allow_null=True)
 
     class Meta:
         model = FabricColorImage
         fields = [
             "color",
+            "color_display_name",
+            "color_mandarin",
             "primary_image_url",
             "aux_image1_url",
             "aux_image2_url",
@@ -266,24 +270,19 @@ class FabricColorImageSerializer(serializers.ModelSerializer):
 
 
 class FabricListSerializer(serializers.ModelSerializer):
-    # photo_url = serializers.SerializerMethodField()
     product_category = serializers.CharField(source="product_category.name")
     color_images = FabricColorImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Fabric
-        fields = ["id", "item_code", "product_category", "finish", "color_images"]
-
-    # def get_photo_url(self, obj):
-    #     if obj.photo and obj.photo.file:
-    #         return obj.photo.file.url
-    #     return None
+        fields = ["id", "item_code", "product_category", "finish", "finish_mandarin", "color_images"]
 
 
 class FabricSerializer(serializers.ModelSerializer):
     is_favorite = serializers.SerializerMethodField()
     related_fabrics = serializers.SerializerMethodField()
     product_category_name = serializers.CharField(source="product_category.name")
+    product_category_name_mandarin = serializers.CharField(source="product_category.name_mandarin", read_only=True, allow_null=True)
     color_images = FabricColorImageSerializer(many=True, read_only=True)
 
     class Meta:
@@ -328,7 +327,12 @@ class FabricSerializer(serializers.ModelSerializer):
             )
             related_fabrics.extend(similar_to_current)
 
-        return FabricListSerializer(related_fabrics[:8], many=True).data
+        # Pass the request context to the serializer to properly generate image URLs
+        return FabricListSerializer(
+            related_fabrics[:8], 
+            many=True, 
+            context=self.context
+        ).data
 
 
 class FabricCreateUpdateSerializer(serializers.ModelSerializer):
@@ -338,8 +342,11 @@ class FabricCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Fabric
         fields = [
-            'product_category', 'title', 'description', 
-            'composition', 'weight', 'finish', 
+            'product_category', 'title', 'title_mandarin', 
+            'description', 'description_mandarin', 
+            'composition', 'composition_mandarin', 
+            'weight', 'weight_mandarin', 
+            'finish', 'finish_mandarin', 
             'item_code', 'is_hot_selling', 'color_images'
         ]
     
@@ -478,7 +485,7 @@ class EventSerializer(serializers.ModelSerializer):
 class BlogCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogCategory
-        fields = ["id", "name"]
+        fields = ["id", "name", "name_mandarin"]
 
 
 class BlogSerializer(serializers.ModelSerializer):
@@ -486,6 +493,7 @@ class BlogSerializer(serializers.ModelSerializer):
     author_photo_url = serializers.SerializerMethodField()
     author_name = serializers.CharField(source="author.username", read_only=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
+    category_name_mandarin = serializers.CharField(source="category.name_mandarin", read_only=True, allow_null=True)
     image_id = serializers.SerializerMethodField()
 
     class Meta:
@@ -493,10 +501,13 @@ class BlogSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "title_mandarin",
             "content",
+            "content_mandarin",
             "author_name",
             "view_count",
             "category_name",
+            "category_name_mandarin",
             "created_at",
             "photo_url",
             "author_photo_url",
@@ -676,19 +687,19 @@ class ProductCategoryCreateUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ProductCategory
-        fields = ['id', 'name', 'description', 'image']
+        fields = ['id', 'name', 'name_mandarin', 'description', 'description_mandarin', 'image', 'order']
 
 
 class BlogCategoryCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogCategory
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'name_mandarin']
 
 
 class FabricColorCategoryCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FabricColorCategory
-        fields = ['id', 'display_name', 'color']
+        fields = ['id', 'display_name', 'display_name_mandarin', 'color']
 
 
 class EventCreateUpdateSerializer(serializers.ModelSerializer):
@@ -696,7 +707,10 @@ class EventCreateUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Event
-        fields = ['id', 'title', 'description', 'date', 'time', 'photo', 'location', 'url', 'email', 'phone']
+        fields = [
+            'id', 'title', 'title_mandarin', 'description', 'description_mandarin', 
+            'date', 'time', 'photo', 'location', 'location_mandarin', 'url', 'email', 'phone'
+        ]
 
 
 class OrderItemCreateUpdateSerializer(serializers.ModelSerializer):
@@ -799,8 +813,11 @@ class ContactDetailsCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactDetails
         fields = [
-            'id', 'phone', 'email', 'address', 'city', 'county', 'postal_code',
-            'latitude', 'longitude', 'country', 'facebook', 'instagram', 'whatsapp', 'line'
+            'id', 'phone', 'email', 
+            'address', 'address_mandarin', 'city', 'city_mandarin', 
+            'county', 'county_mandarin', 'postal_code',
+            'latitude', 'longitude', 'country', 'country_mandarin',
+            'facebook', 'instagram', 'whatsapp', 'line'
         ]
 
 
@@ -841,7 +858,8 @@ class BlogCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
         fields = [
-            'id', 'title', 'content', 'author', 'photo', 'category', 'view_count'
+            'id', 'title', 'title_mandarin', 'content', 'content_mandarin', 
+            'author', 'photo', 'category', 'view_count'
         ]
 
 
@@ -858,7 +876,9 @@ class FabricColorImageWithIdsSerializer(serializers.ModelSerializer):
     aux_image3_id = serializers.SerializerMethodField()
     model_image_id = serializers.SerializerMethodField()
     
-    color = serializers.CharField(source="color_category.display_name", read_only=True)
+    color = serializers.CharField(source="color_category.color", read_only=True, allow_null=True)
+    color_display_name = serializers.CharField(source="color_category.display_name", read_only=True)
+    color_mandarin = serializers.CharField(source="color_category.display_name_mandarin", read_only=True, allow_null=True)
     color_category_id = serializers.IntegerField(source='color_category.id')
 
     class Meta:
@@ -866,6 +886,8 @@ class FabricColorImageWithIdsSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "color",
+            "color_display_name",
+            "color_mandarin",
             "color_category_id",
             "primary_image_url",
             "primary_image_id",
@@ -933,6 +955,7 @@ class FabricWithIdsSerializer(serializers.ModelSerializer):
     is_favorite = serializers.SerializerMethodField()
     related_fabrics = serializers.SerializerMethodField()
     product_category_name = serializers.CharField(source="product_category.name")
+    product_category_name_mandarin = serializers.CharField(source="product_category.name_mandarin", read_only=True, allow_null=True)
     color_images = FabricColorImageWithIdsSerializer(many=True, read_only=True)
 
     class Meta:
@@ -977,7 +1000,12 @@ class FabricWithIdsSerializer(serializers.ModelSerializer):
             )
             related_fabrics.extend(similar_to_current)
 
-        return FabricListSerializer(related_fabrics[:8], many=True).data
+        # Pass the request context to the serializer to properly generate image URLs
+        return FabricListSerializer(
+            related_fabrics[:8], 
+            many=True, 
+            context=self.context
+        ).data
 
 
 class PublicUserSerializer(serializers.ModelSerializer):

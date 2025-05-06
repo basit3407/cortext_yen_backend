@@ -39,6 +39,7 @@ class MediaUploads(models.Model):
 
 class FabricColorCategory(models.Model):
     display_name = models.CharField(max_length=255)
+    display_name_mandarin = models.CharField(max_length=255, blank=True, null=True)
     color = models.CharField(
         max_length=255, validators=[validate_colors], blank=True, null=True
     )
@@ -168,10 +169,16 @@ class CustomUser(AbstractUser):
 
 class ProductCategory(models.Model):
     name = models.CharField(max_length=255)
+    name_mandarin = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField()
+    description_mandarin = models.TextField(blank=True, null=True)
     image = models.ForeignKey(
         MediaUploads, on_delete=models.SET_NULL, blank=True, null=True
     )
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
 
     def __str__(self):
         return self.name
@@ -189,10 +196,15 @@ class ProductCategory(models.Model):
 class Fabric(models.Model):
     product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
+    title_mandarin = models.CharField(max_length=255, blank=True, null=True)
     description = models.CharField(max_length=100)
+    description_mandarin = models.CharField(max_length=100, blank=True, null=True)
     composition = models.CharField(max_length=255)
+    composition_mandarin = models.CharField(max_length=255, blank=True, null=True)
     weight = models.CharField(max_length=100)
+    weight_mandarin = models.CharField(max_length=100, blank=True, null=True)
     finish = models.CharField(max_length=100)
+    finish_mandarin = models.CharField(max_length=100, blank=True, null=True)
     item_code = models.CharField(
         max_length=100,
         unique=True,
@@ -270,7 +282,9 @@ class OrderItem(models.Model):
 
 class Event(models.Model):
     title = models.CharField(max_length=255)
+    title_mandarin = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField()
+    description_mandarin = models.TextField(blank=True, null=True)
     date = models.DateField()
     time = models.TimeField()
     photo = models.ForeignKey(
@@ -281,6 +295,7 @@ class Event(models.Model):
         blank=True,
     )
     location = models.CharField(max_length=255)
+    location_mandarin = models.CharField(max_length=255, blank=True, null=True)
     url = models.URLField()
     email = models.EmailField()
     phone = models.CharField(max_length=20)
@@ -291,6 +306,7 @@ class Event(models.Model):
 
 class BlogCategory(models.Model):
     name = models.CharField(max_length=255)
+    name_mandarin = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -298,9 +314,9 @@ class BlogCategory(models.Model):
 
 class Blog(models.Model):
     title = models.CharField(max_length=255)
-    content = content = CKEditor5Field(
-        "Text", config_name="default"
-    )  # Use CKEditor5Field
+    title_mandarin = models.CharField(max_length=255, blank=True, null=True)
+    content = CKEditor5Field("Text", config_name="default")
+    content_mandarin = CKEditor5Field("Text", config_name="default", blank=True, null=True)
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     view_count = models.PositiveIntegerField(default=0)  # New field for tracking views
     photo = models.ForeignKey(
@@ -414,12 +430,16 @@ class ContactDetails(models.Model):
     phone = models.CharField(max_length=20)
     email = models.EmailField()
     address = models.CharField(max_length=255)
+    address_mandarin = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=50)
+    city_mandarin = models.CharField(max_length=50, blank=True, null=True)
     county = models.CharField(max_length=50)
+    county_mandarin = models.CharField(max_length=50, blank=True, null=True)
     postal_code = models.CharField(max_length=10)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, default=24.0708)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, default=120.5409)
     country = models.CharField(max_length=50)
+    country_mandarin = models.CharField(max_length=50, blank=True, null=True)
     facebook = models.URLField(blank=True, null=True)
     instagram = models.URLField(blank=True, null=True)
     whatsapp = models.CharField(blank=True, null=True, max_length=255)
