@@ -11,10 +11,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='fabriccolorimage',
-            name='color',
-        ),
+        # Skip removing the color field since it doesn't exist and was already removed in migration 0036
+        # migrations.RemoveField(
+        #     model_name='fabriccolorimage',
+        #     name='color',
+        # ),
         migrations.AddField(
             model_name='contactrequest',
             name='name',
