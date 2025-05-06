@@ -33,4 +33,58 @@ class Migration(migrations.Migration):
             """,
             reverse_sql="-- No reverse operation needed",
         ),
+        # Add mandarin fields conditionally if they don't exist
+        migrations.RunSQL(
+            sql="""
+                DO $$ 
+                BEGIN
+                    -- Check and add mandarin fields to Fabric if they don't exist
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'composition_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN composition_mandarin VARCHAR(255);
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'description_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN description_mandarin VARCHAR(100);
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'finish_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN finish_mandarin VARCHAR(100);
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'title_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN title_mandarin VARCHAR(255);
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'weight_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN weight_mandarin VARCHAR(100);
+                    END IF;
+                END $$;
+            """,
+            reverse_sql="-- No reverse operation needed",
+        ),
+        # Add model_image_id field conditionally if it doesn't exist
+        migrations.RunSQL(
+            sql="""
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabriccolorimage' 
+                                 AND column_name = 'model_image_id') THEN
+                        ALTER TABLE cortex_yen_app_fabriccolorimage 
+                        ADD COLUMN model_image_id INTEGER REFERENCES cortex_yen_app_mediauploads(id);
+                    END IF;
+                END $$;
+            """,
+            reverse_sql="-- No reverse operation needed",
+        ),
     ]

@@ -16,44 +16,90 @@ class Migration(migrations.Migration):
         #     model_name='fabriccolorimage',
         #     name='color',
         # ),
-        migrations.AddField(
-            model_name='contactrequest',
-            name='name',
-            field=models.CharField(blank=True, max_length=255),
+        
+        # Use RunSQL to conditionally add name field only if it doesn't exist
+        migrations.RunSQL(
+            sql="""
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                  WHERE table_name = 'cortex_yen_app_contactrequest' 
+                                  AND column_name = 'name') THEN
+                        ALTER TABLE cortex_yen_app_contactrequest ADD COLUMN name VARCHAR(255);
+                    END IF;
+                END $$;
+            """,
+            reverse_sql="-- No reverse operation needed",
         ),
-        migrations.AddField(
-            model_name='contactrequest',
-            name='phone',
-            field=models.CharField(blank=True, max_length=20),
+        
+        # Use RunSQL to conditionally add phone field only if it doesn't exist
+        migrations.RunSQL(
+            sql="""
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                  WHERE table_name = 'cortex_yen_app_contactrequest' 
+                                  AND column_name = 'phone') THEN
+                        ALTER TABLE cortex_yen_app_contactrequest ADD COLUMN phone VARCHAR(20);
+                    END IF;
+                END $$;
+            """,
+            reverse_sql="-- No reverse operation needed",
         ),
-        migrations.AddField(
-            model_name='fabric',
-            name='composition_mandarin',
-            field=models.CharField(blank=True, max_length=255, null=True),
+        
+        # Use RunSQL to conditionally add mandarin fields to Fabric if they don't exist
+        migrations.RunSQL(
+            sql="""
+                DO $$ 
+                BEGIN
+                    -- Check and add mandarin fields to Fabric if they don't exist
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'composition_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN composition_mandarin VARCHAR(255);
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'description_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN description_mandarin VARCHAR(100);
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'finish_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN finish_mandarin VARCHAR(100);
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'title_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN title_mandarin VARCHAR(255);
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabric' 
+                                 AND column_name = 'weight_mandarin') THEN
+                        ALTER TABLE cortex_yen_app_fabric ADD COLUMN weight_mandarin VARCHAR(100);
+                    END IF;
+                END $$;
+            """,
+            reverse_sql="-- No reverse operation needed",
         ),
-        migrations.AddField(
-            model_name='fabric',
-            name='description_mandarin',
-            field=models.CharField(blank=True, max_length=100, null=True),
-        ),
-        migrations.AddField(
-            model_name='fabric',
-            name='finish_mandarin',
-            field=models.CharField(blank=True, max_length=100, null=True),
-        ),
-        migrations.AddField(
-            model_name='fabric',
-            name='title_mandarin',
-            field=models.CharField(blank=True, max_length=255, null=True),
-        ),
-        migrations.AddField(
-            model_name='fabric',
-            name='weight_mandarin',
-            field=models.CharField(blank=True, max_length=100, null=True),
-        ),
-        migrations.AddField(
-            model_name='fabriccolorimage',
-            name='model_image',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='model_image', to='cortex_yen_app.mediauploads'),
+        
+        # Use RunSQL to conditionally add model_image_id field if it doesn't exist
+        migrations.RunSQL(
+            sql="""
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                 WHERE table_name = 'cortex_yen_app_fabriccolorimage' 
+                                 AND column_name = 'model_image_id') THEN
+                        ALTER TABLE cortex_yen_app_fabriccolorimage 
+                        ADD COLUMN model_image_id INTEGER REFERENCES cortex_yen_app_mediauploads(id);
+                    END IF;
+                END $$;
+            """,
+            reverse_sql="-- No reverse operation needed",
         ),
     ]
