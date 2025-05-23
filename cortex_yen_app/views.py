@@ -960,6 +960,220 @@ class FabricDeleteAPIView(generics.DestroyAPIView):
             )
 
 
+class FabricBulkDeleteAPIView(APIView):
+    """
+    API endpoint to delete multiple fabrics at once.
+    
+    This endpoint accepts a list of fabric IDs and attempts to delete them all.
+    It returns detailed information about which fabrics were successfully deleted
+    and which ones failed (with reasons).
+    """
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['fabric_ids'],
+            properties={
+                'fabric_ids': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_INTEGER),
+                    description='List of fabric IDs to delete',
+                    example=[1, 2, 3, 4, 5]
+                )
+            }
+        ),
+        responses={
+            200: openapi.Response(
+                description="Bulk deletion completed (may include partial failures)",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'status': openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            description='Overall operation status',
+                            enum=['success', 'partial_success', 'failed']
+                        ),
+                        'message': openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            description='Summary message'
+                        ),
+                        'total_requested': openapi.Schema(
+                            type=openapi.TYPE_INTEGER,
+                            description='Total number of fabrics requested for deletion'
+                        ),
+                        'total_deleted': openapi.Schema(
+                            type=openapi.TYPE_INTEGER,
+                            description='Total number of fabrics successfully deleted'
+                        ),
+                        'total_failed': openapi.Schema(
+                            type=openapi.TYPE_INTEGER,
+                            description='Total number of fabrics that failed to delete'
+                        ),
+                        'deleted_fabrics': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    'title': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'item_code': openapi.Schema(type=openapi.TYPE_STRING)
+                                }
+                            ),
+                            description='List of successfully deleted fabrics'
+                        ),
+                        'failed_fabrics': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    'error': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'reason': openapi.Schema(type=openapi.TYPE_STRING)
+                                }
+                            ),
+                            description='List of fabrics that failed to delete with error details'
+                        )
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Bad Request - Invalid input data",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING),
+                        'details': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            500: openapi.Response(
+                description="Internal Server Error",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING),
+                        'details': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            )
+        },
+        operation_description="Delete multiple fabrics in a single request. Returns detailed information about successful and failed deletions."
+    )
+    def post(self, request):
+        try:
+            # Validate input data
+            fabric_ids = request.data.get('fabric_ids', [])
+            
+            if not fabric_ids:
+                return Response(
+                    {
+                        "error": "No fabric IDs provided",
+                        "details": "The 'fabric_ids' field is required and must contain at least one fabric ID."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if not isinstance(fabric_ids, list):
+                return Response(
+                    {
+                        "error": "Invalid data format",
+                        "details": "The 'fabric_ids' field must be an array of integers."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Validate all IDs are integers
+            try:
+                fabric_ids = [int(id) for id in fabric_ids]
+            except (ValueError, TypeError):
+                return Response(
+                    {
+                        "error": "Invalid fabric ID format",
+                        "details": "All fabric IDs must be valid integers."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Remove duplicates while preserving order
+            fabric_ids = list(dict.fromkeys(fabric_ids))
+            
+            # Initialize response data
+            deleted_fabrics = []
+            failed_fabrics = []
+            
+            # Process each fabric ID
+            for fabric_id in fabric_ids:
+                try:
+                    # Try to get the fabric
+                    fabric = Fabric.objects.get(id=fabric_id)
+                    fabric_info = {
+                        'id': fabric.id,
+                        'title': fabric.title,
+                        'item_code': fabric.item_code
+                    }
+                    
+                    # Attempt to delete the fabric
+                    fabric.delete()
+                    deleted_fabrics.append(fabric_info)
+                    
+                    logger.info(f"Successfully deleted fabric ID {fabric_id} ({fabric.title})")
+                    
+                except Fabric.DoesNotExist:
+                    failed_fabrics.append({
+                        'id': fabric_id,
+                        'error': 'Not found',
+                        'reason': f'Fabric with ID {fabric_id} does not exist.'
+                    })
+                    logger.warning(f"Attempted to delete non-existent fabric ID {fabric_id}")
+                    
+                except Exception as e:
+                    failed_fabrics.append({
+                        'id': fabric_id,
+                        'error': 'Deletion failed',
+                        'reason': str(e)
+                    })
+                    logger.error(f"Failed to delete fabric ID {fabric_id}: {str(e)}")
+            
+            # Calculate statistics
+            total_requested = len(fabric_ids)
+            total_deleted = len(deleted_fabrics)
+            total_failed = len(failed_fabrics)
+            
+            # Determine overall status
+            if total_failed == 0:
+                status_text = 'success'
+                message = f"Successfully deleted all {total_deleted} fabrics."
+            elif total_deleted == 0:
+                status_text = 'failed'
+                message = f"Failed to delete any of the {total_requested} fabrics."
+            else:
+                status_text = 'partial_success'
+                message = f"Deleted {total_deleted} of {total_requested} fabrics. {total_failed} fabrics failed to delete."
+            
+            # Prepare response
+            response_data = {
+                'status': status_text,
+                'message': message,
+                'total_requested': total_requested,
+                'total_deleted': total_deleted,
+                'total_failed': total_failed,
+                'deleted_fabrics': deleted_fabrics,
+                'failed_fabrics': failed_fabrics
+            }
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Unexpected error in FabricBulkDeleteAPIView: {str(e)}")
+            return Response(
+                {
+                    "error": "Internal server error",
+                    "details": "An unexpected error occurred while processing the bulk deletion request."
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 class ToggleFavoriteView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = FavoriteSerializer

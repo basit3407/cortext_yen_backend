@@ -21,6 +21,7 @@ from .views import (
     FabricColorCategoryViewSet,
     FabricCreateAPIView,
     FabricDeleteAPIView,
+    FabricBulkDeleteAPIView,
     FabricDetailAPIView,
     FabricDetailWithIdsAPIView,
     FabricListAPIView,
@@ -83,6 +84,7 @@ urlpatterns = [
     path("fabrics/create/", FabricCreateAPIView.as_view(), name="fabric-create"),
     path("fabrics/<int:pk>/update/", FabricUpdateAPIView.as_view(), name="fabric-update"),
     path("fabrics/<int:pk>/delete/", FabricDeleteAPIView.as_view(), name="fabric-delete"),
+    path("fabrics/bulk-delete/", FabricBulkDeleteAPIView.as_view(), name="fabric-bulk-delete"),
     path("toggle_favorite/", ToggleFavoriteView.as_view(), name="toggle-favorite"),
     path(
         "favorite_fabrics/",
