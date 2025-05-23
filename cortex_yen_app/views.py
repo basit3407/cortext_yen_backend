@@ -941,35 +941,14 @@ class FabricDeleteAPIView(generics.DestroyAPIView):
     
     @swagger_auto_schema(
         responses={
-            204: "No Content",
-            400: "Bad Request - Fabric is in use"
+            204: "No Content - Fabric deleted successfully",
+            404: "Not Found - Fabric not found",
+            500: "Internal Server Error"
         }
     )
     def delete(self, request, *args, **kwargs):
         try:
             return super().delete(request, *args, **kwargs)
-        except ValidationError as e:
-            logger.error(f"Validation error in FabricDeleteAPIView.delete: {str(e)}")
-            error_message = str(e)
-            
-            # Create more user-friendly error messages for specific cases
-            if "being used in" in error_message and "order" in error_message:
-                detail = "This fabric cannot be deleted because it is in use"
-                message = "This fabric is currently associated with one or more orders. Please remove it from all orders before deletion."
-            elif "being used in" in error_message and "contact request" in error_message:
-                detail = "This fabric cannot be deleted because it is in use"
-                message = "This fabric is referenced in one or more contact requests. It cannot be deleted at this time."
-            else:
-                detail = "Validation error"
-                message = error_message
-                
-            return Response(
-                {
-                    "detail": detail,
-                    "errors": {"general": message}
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
         except Exception as e:
             logger.error(f"Error in FabricDeleteAPIView.delete: {str(e)}")
             return Response(

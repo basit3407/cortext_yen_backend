@@ -424,7 +424,7 @@ class FabricCreateUpdateSerializer(serializers.ModelSerializer):
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
-    fabric = FabricSerializer()  # Serializer for the associated Fabric
+    fabric = FabricSerializer(allow_null=True)  # Serializer for the associated Fabric
 
     class Meta:
         model = Favorite
@@ -433,9 +433,9 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     fabric_id = serializers.PrimaryKeyRelatedField(
-        queryset=Fabric.objects.all(), write_only=True, source="fabric"
+        queryset=Fabric.objects.all(), write_only=True, source="fabric", required=False, allow_null=True
     )
-    fabric = FabricSerializer(read_only=True)
+    fabric = FabricSerializer(read_only=True, allow_null=True)
 
     class Meta:
         model = OrderItem
@@ -585,9 +585,9 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
 class CartItemSerializer(serializers.ModelSerializer):
     fabric_id = serializers.PrimaryKeyRelatedField(
-        queryset=Fabric.objects.all(), write_only=True, source="fabric"
+        queryset=Fabric.objects.all(), write_only=True, source="fabric", required=False, allow_null=True
     )
-    fabric = FabricSerializer(read_only=True)
+    fabric = FabricSerializer(read_only=True, allow_null=True)
 
     class Meta:
         model = CartItem
@@ -714,8 +714,8 @@ class EventCreateUpdateSerializer(serializers.ModelSerializer):
 
 
 class OrderItemCreateUpdateSerializer(serializers.ModelSerializer):
-    fabric = serializers.PrimaryKeyRelatedField(queryset=Fabric.objects.all())
-    
+    fabric = serializers.PrimaryKeyRelatedField(queryset=Fabric.objects.all(), required=False, allow_null=True)
+
     class Meta:
         model = OrderItem
         fields = ['id', 'fabric', 'color', 'quantity']

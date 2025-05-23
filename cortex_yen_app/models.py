@@ -226,20 +226,8 @@ class Fabric(models.Model):
             )
 
     def delete(self, *args, **kwargs):
-        # Check if this fabric is being used in any orders
-        order_count = self.orderitem_set.count()
-        if order_count > 0:
-            raise ValidationError(
-                f"This fabric cannot be deleted since it is being used in {order_count} order(s)."
-            )
-        
-        # Check if this fabric is being used in any contact requests
-        contact_request_count = self.contactrequest_set.count()
-        if contact_request_count > 0:
-            raise ValidationError(
-                f"This fabric cannot be deleted since it is being used in {contact_request_count} contact request(s)."
-            )
-        
+        # Allow deletion of fabric even if it's being used
+        # Related objects will be handled by their on_delete settings
         super().delete(*args, **kwargs)
 
     def __str__(self):
@@ -248,13 +236,14 @@ class Fabric(models.Model):
 
 class Favorite(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    fabric = models.ForeignKey(Fabric, on_delete=models.CASCADE)
+    fabric = models.ForeignKey(Fabric, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         unique_together = ("user", "fabric")
 
     def __str__(self):
-        return f"{self.user.username}'s favorite: {self.fabric.title}"
+        fabric_title = self.fabric.title if self.fabric else "Deleted Fabric"
+        return f"{self.user.username}'s favorite: {fabric_title}"
 
 
 class Order(models.Model):
@@ -271,13 +260,14 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     fabric = models.ForeignKey(
-        Fabric, on_delete=models.CASCADE, related_name="orderitem_set", null=True, blank=True
+        Fabric, on_delete=models.SET_NULL, related_name="orderitem_set", null=True, blank=True
     )
     color = models.CharField(max_length=100)
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.order} - {self.fabric}"
+        fabric_title = self.fabric.title if self.fabric else "Deleted Fabric"
+        return f"{self.order} - {fabric_title}"
 
 
 class Event(models.Model):
@@ -344,12 +334,13 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
-    fabric = models.ForeignKey(Fabric, on_delete=models.CASCADE)
+    fabric = models.ForeignKey(Fabric, on_delete=models.SET_NULL, null=True, blank=True)
     color = models.CharField(max_length=100)
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.fabric.title} ({self.color}) - {self.quantity}"
+        fabric_title = self.fabric.title if self.fabric else "Deleted Fabric"
+        return f"{fabric_title} ({self.color}) - {self.quantity}"
 
 
 class ContactRequest(models.Model):
@@ -388,7 +379,7 @@ class ContactRequest(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     related_fabric = models.ForeignKey(
-        Fabric, null=True, blank=True, on_delete=models.CASCADE
+        Fabric, null=True, blank=True, on_delete=models.SET_NULL
     )
     company_name = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True, null=True)
