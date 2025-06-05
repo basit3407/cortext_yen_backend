@@ -35,6 +35,7 @@ from .views import (
     OrderViewSet,
     ProductCategoryListAPIView,
     ProductCategoryViewSet,
+    ResendVerificationEmailView,
     SubscriptionView,
     ToggleFavoriteView,
     UserRegistrationAPIView,
@@ -67,6 +68,7 @@ urlpatterns = [
     path("login/", UserLoginAPIView.as_view(), name="user_login"),
     path("google-login/", GoogleLoginAPIView.as_view(), name="google_login"),
     path("user/", UserAPIView.as_view(), name="user_profile"),
+    path("resend-verification-email/", ResendVerificationEmailView.as_view(), name="resend_verification_email"),
     path("contact-requests/public/", PublicContactRequestsView.as_view(), name="public-contact-requests"),
     path(
         "verify-email/<str:verification_token>/",

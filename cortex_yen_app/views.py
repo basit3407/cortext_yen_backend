@@ -1760,8 +1760,8 @@ class ContactRequestListCreateAPIView(
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:
-            return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all()
-        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=user)
+            return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all().order_by('-created_at')
+        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=user).order_by('-created_at')
 
 
 class ContactRequestDetailAPIView(generics.RetrieveUpdateAPIView):
@@ -1794,8 +1794,8 @@ class ContactRequestDetailAPIView(generics.RetrieveUpdateAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:
-            return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all()
-        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=user)
+            return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').all().order_by('-created_at')
+        return ContactRequest.objects.select_related('user', 'related_fabric', 'related_order').filter(user=user).order_by('-created_at')
 
 
 class UserAPIView(RetrieveUpdateAPIView):
@@ -2818,3 +2818,152 @@ class AllContactRequestDetailAPIView(generics.RetrieveAPIView):
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class ResendVerificationEmailView(APIView):
+    """
+    API endpoint to resend verification email to unverified users.
+    The email is extracted from the user's authentication token.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response(
+                description="Verification email resent successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            description='Success message'
+                        )
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Bad request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            description='Error message'
+                        )
+                    }
+                )
+            ),
+            401: openapi.Response(
+                description="Unauthorized - No valid token provided",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            description='Error message'
+                        )
+                    }
+                )
+            )
+        },
+        security=[{"token": []}]
+    )
+    def post(self, request):
+        logger.info("Starting ResendVerificationEmailView.post")
+        logger.info(f"User making request: {request.user.email} (ID: {request.user.id})")
+        
+        user = request.user
+        
+        try:
+            logger.info(f"Checking verification status for user {user.email}")
+            logger.info(f"Current verification status: {user.is_verified}")
+            
+            # Check if user is already verified
+            if user.is_verified:
+                logger.info(f"User {user.email} is already verified, returning 400")
+                return Response(
+                    {'error': 'User is already verified'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            logger.info(f"Generating verification token for user {user.email}")
+            try:
+                # Generate verification token
+                verification_token = user.generate_verification_token()
+                logger.info("Verification token generated successfully")
+            except Exception as e:
+                logger.error(f"Error generating verification token: {str(e)}")
+                return Response(
+                    {'error': 'Failed to generate verification token'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            # Create verification URL
+            verification_url = f"{settings.FRONTEND_URL}/verify-email/{verification_token}/"
+            logger.info(f"Generated verification URL: {verification_url}")
+            
+            # Log frontend URL setting
+            logger.info(f"FRONTEND_URL setting: {settings.FRONTEND_URL}")
+            
+            # Prepare email content
+            subject = "Please verify your email"
+            try:
+                logger.info("Preparing email content")
+                html_content = render_to_string(
+                    'verification_email_template.html',
+                    {
+                        'name': user.name or user.username,
+                        'verification_url': verification_url,
+                        'button_text': "Verify Email"
+                    }
+                )
+                logger.info("Email content prepared successfully")
+            except Exception as e:
+                logger.error(f"Error rendering email template: {str(e)}")
+                return Response(
+                    {'error': 'Failed to prepare email content'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            # Send verification email
+            try:
+                logger.info(f"Attempting to send email to {user.email}")
+                logger.info(f"Using DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
+                
+                email = EmailMessage(
+                    subject,
+                    html_content,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email]
+                )
+                email.content_subtype = "html"
+                email.send()
+                
+                logger.info(f"Email sent successfully to {user.email}")
+                return Response(
+                    {'message': 'Verification email has been resent'},
+                    status=status.HTTP_200_OK
+                )
+                
+            except Exception as e:
+                logger.error(f"Error sending verification email: {str(e)}")
+                logger.error(f"Email configuration: FROM={settings.DEFAULT_FROM_EMAIL}, TO={user.email}")
+                logger.error(f"Full exception details:", exc_info=True)
+                return Response(
+                    {
+                        'error': 'Failed to send verification email',
+                        'details': str(e)
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+                
+        except Exception as e:
+            logger.error(f"Unexpected error in ResendVerificationEmailView: {str(e)}")
+            logger.error("Full exception details:", exc_info=True)
+            return Response(
+                {
+                    'error': 'An unexpected error occurred',
+                    'details': str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
