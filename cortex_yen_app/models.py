@@ -195,6 +195,7 @@ class ProductCategory(models.Model):
 
 class Fabric(models.Model):
     product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
+    extra_categories = models.ManyToManyField(ProductCategory, related_name='extra_fabrics', blank=True)
     title = models.CharField(max_length=255)
     title_mandarin = models.CharField(max_length=255, blank=True, null=True)
     description = models.CharField(max_length=100)

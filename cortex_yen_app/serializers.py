@@ -284,6 +284,7 @@ class FabricSerializer(serializers.ModelSerializer):
     product_category_name = serializers.CharField(source="product_category.name")
     product_category_name_mandarin = serializers.CharField(source="product_category.name_mandarin", read_only=True, allow_null=True)
     color_images = FabricColorImageSerializer(many=True, read_only=True)
+    extra_categories = ProductCategorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Fabric
@@ -337,12 +338,13 @@ class FabricSerializer(serializers.ModelSerializer):
 
 class FabricCreateUpdateSerializer(serializers.ModelSerializer):
     product_category = serializers.PrimaryKeyRelatedField(queryset=ProductCategory.objects.all())
+    extra_categories = serializers.PrimaryKeyRelatedField(queryset=ProductCategory.objects.all(), many=True, required=False)
     color_images = serializers.ListField(child=serializers.JSONField(), required=False, write_only=True)
     
     class Meta:
         model = Fabric
         fields = [
-            'product_category', 'title', 'title_mandarin', 
+            'product_category', 'extra_categories', 'title', 'title_mandarin', 
             'description', 'description_mandarin', 
             'composition', 'composition_mandarin', 
             'weight', 'weight_mandarin', 
@@ -352,7 +354,12 @@ class FabricCreateUpdateSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         color_images_data = validated_data.pop('color_images', [])
+        extra_categories_data = validated_data.pop('extra_categories', [])
         fabric = Fabric.objects.create(**validated_data)
+        
+        # Set extra categories
+        if extra_categories_data:
+            fabric.extra_categories.set(extra_categories_data)
         
         # Create color images if provided
         for color_image_data in color_images_data:
@@ -362,10 +369,16 @@ class FabricCreateUpdateSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         color_images_data = validated_data.pop('color_images', [])
+        extra_categories_data = validated_data.pop('extra_categories', None)
         
         # Update fabric fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+        
+        # Update extra categories if provided
+        if extra_categories_data is not None:
+            instance.extra_categories.set(extra_categories_data)
+        
         instance.save()
         
         # Track which color categories are being updated

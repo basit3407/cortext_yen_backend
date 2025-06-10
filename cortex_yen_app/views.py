@@ -509,6 +509,7 @@ class FabricListAPIView(generics.ListAPIView):
     - sort_by: Sort by "newest", "oldest", or "most_requested" (default: "newest")
     - colors: Filter by colors
     - item_code: Filter by item code
+    - extra_categories: Filter by comma-separated list of category IDs (will match both main category and extra categories)
     """
     queryset = Fabric.objects.all().order_by('-created_at')  # Sort by recently created
     serializer_class = FabricSerializer
@@ -548,6 +549,12 @@ class FabricListAPIView(generics.ListAPIView):
                 "item_code",
                 openapi.IN_QUERY,
                 description="Filter by item code",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "extra_categories",
+                openapi.IN_QUERY,
+                description="Filter by comma-separated list of category IDs (will match both main category and extra categories)",
                 type=openapi.TYPE_STRING,
             ),
             openapi.Parameter(
@@ -629,6 +636,7 @@ class FabricCreateAPIView(generics.ListCreateAPIView):
             required=['product_category', 'title', 'description', 'composition', 'weight', 'finish', 'item_code'],
             properties={
                 'product_category': openapi.Schema(type=openapi.TYPE_INTEGER, description='Product category ID'),
+                'extra_categories': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_INTEGER), description='List of additional product category IDs'),
                 'title': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric title'),
                 'description': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric description'),
                 'composition': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric composition'),
@@ -733,6 +741,7 @@ class FabricUpdateAPIView(generics.UpdateAPIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 'product_category': openapi.Schema(type=openapi.TYPE_INTEGER, description='Product category ID'),
+                'extra_categories': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_INTEGER), description='List of additional product category IDs'),
                 'title': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric title'),
                 'description': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric description'),
                 'composition': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric composition'),
@@ -836,6 +845,7 @@ class FabricUpdateAPIView(generics.UpdateAPIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 'product_category': openapi.Schema(type=openapi.TYPE_INTEGER, description='Product category ID'),
+                'extra_categories': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_INTEGER), description='List of additional product category IDs'),
                 'title': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric title'),
                 'description': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric description'),
                 'composition': openapi.Schema(type=openapi.TYPE_STRING, description='Fabric composition'),

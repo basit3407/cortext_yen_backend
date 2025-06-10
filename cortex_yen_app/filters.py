@@ -50,10 +50,11 @@ class FabricFilter(filters.FilterSet):
     category = filters.NumberFilter(
         field_name="color_images__color_category__id", lookup_expr="exact"
     )
+    extra_categories = filters.CharFilter(method="filter_by_extra_categories")
 
     class Meta:
         model = Fabric
-        fields = ["keyword", "sort_by", "colors", "item_code", "category"]
+        fields = ["keyword", "sort_by", "colors", "item_code", "category", "extra_categories"]
 
     def filter_by_keyword(self, queryset, name, value):
         if not value:
@@ -75,13 +76,19 @@ class FabricFilter(filters.FilterSet):
             english_category = ProductCategory.objects.filter(name__iexact=value).first()
             if english_category:
                 logger.info(f"Found matching English category name: {english_category.name}")
-                return queryset.filter(product_category=english_category)
+                return queryset.filter(
+                    Q(product_category=english_category) |
+                    Q(extra_categories=english_category)
+                ).distinct()
                 
             # Check for exact match in Mandarin name
             mandarin_category = ProductCategory.objects.filter(name_mandarin__iexact=value).first()
             if mandarin_category:
                 logger.info(f"Found matching Mandarin category name: {mandarin_category.name_mandarin} (English: {mandarin_category.name})")
-                return queryset.filter(product_category=mandarin_category)
+                return queryset.filter(
+                    Q(product_category=mandarin_category) |
+                    Q(extra_categories=mandarin_category)
+                ).distinct()
             
             # If no exact match found, search in other fabric fields
             logger.info(f"No matching category found for '{value}', searching in fabric fields")
@@ -140,3 +147,19 @@ class FabricFilter(filters.FilterSet):
         # Default to newest for any unrecognized sort option
         logger.warning(f"Unrecognized sort_by value: '{value}', defaulting to newest")
         return queryset.order_by('-created_at')
+
+    def filter_by_extra_categories(self, queryset, name, value):
+        if not value:
+            return queryset
+            
+        # Split the comma-separated category IDs
+        category_ids = [int(cat_id.strip()) for cat_id in value.split(',') if cat_id.strip().isdigit()]
+        
+        if not category_ids:
+            return queryset
+            
+        # Filter fabrics that have any of the specified extra categories
+        return queryset.filter(
+            Q(product_category_id__in=category_ids) |
+            Q(extra_categories__id__in=category_ids)
+        ).distinct()
