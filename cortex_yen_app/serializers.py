@@ -681,18 +681,26 @@ class FabricColorCategorySerializer(serializers.ModelSerializer):
 
 class MediaUploadsSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = MediaUploads
         fields = ['id', 'file', 'file_url']
-    
+        extra_kwargs = {
+            'file': {'required': True, 'allow_null': False}
+        }
+
     def get_file_url(self, obj):
         if obj.file:
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.file.url)
-            return obj.file.url
+            return f"{settings.SITE_URL}{obj.file.url}"
         return None
+
+    def validate_file(self, value):
+        if not value:
+            raise serializers.ValidationError("No file was submitted.")
+        return value
 
 
 class ProductCategoryCreateUpdateSerializer(serializers.ModelSerializer):

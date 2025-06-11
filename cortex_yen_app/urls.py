@@ -46,6 +46,7 @@ from .views import (
     AllContactRequestsView,
     PublicContactRequestsView,
     AllContactRequestDetailAPIView,
+    MultipleMediaUploadsCreateAPIView,
 )
 
 router = routers.DefaultRouter()
@@ -115,6 +116,8 @@ urlpatterns = [
     path("media/create/", MediaUploadsCreateAPIView.as_view(), name="media-create"),
     path("media/<int:pk>/", MediaUploadsDetailAPIView.as_view(), name="media-detail"),
     path("media/<int:pk>/delete/", MediaUploadsDeleteAPIView.as_view(), name="media-delete"),
+    path('media-uploads/', MediaUploadsCreateAPIView.as_view(), name='media-uploads-create'),
+    path('multiple-media-uploads/', MultipleMediaUploadsCreateAPIView.as_view(), name='multiple-media-uploads-create'),
 ]
 
 if settings.DEBUG:

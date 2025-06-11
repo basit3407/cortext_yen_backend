@@ -1873,7 +1873,7 @@ class FabricColorCategoryListView(generics.ListAPIView):
 
 class MediaUploadsCreateAPIView(generics.CreateAPIView):
     serializer_class = MediaUploadsSerializer
-    
+
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
@@ -1889,6 +1889,84 @@ class MediaUploadsCreateAPIView(generics.CreateAPIView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+class MultipleMediaUploadsCreateAPIView(generics.CreateAPIView):
+    serializer_class = MediaUploadsSerializer
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['files[]'],
+            properties={
+                'files[]': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_FILE,
+                        description='Files to upload (images will be automatically converted to WebP format)'
+                    ),
+                    description='List of files to upload'
+                ),
+            },
+        ),
+        responses={
+            201: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'uploaded_files': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=MediaUploadsSerializer()
+                    )
+                }
+            ),
+            400: 'Invalid input or file type',
+            207: 'Partial success - some files failed to upload'
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        # Try both 'files' and 'files[]' keys
+        files = request.FILES.getlist('files[]') or request.FILES.getlist('files')
+        if not files:
+            return Response(
+                {'error': 'No files provided. Please send files using the "files" or "files[]" field.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        uploaded_files = []
+        errors = []
+
+        for file in files:
+            try:
+                # Create a new data dictionary for the serializer
+                serializer = self.get_serializer(data={'file': file})
+                
+                if serializer.is_valid():
+                    instance = serializer.save()
+                    uploaded_files.append(self.get_serializer(instance).data)
+                else:
+                    errors.append({
+                        'file': file.name,
+                        'errors': serializer.errors
+                    })
+            except Exception as e:
+                errors.append({
+                    'file': file.name,
+                    'errors': str(e)
+                })
+
+        response_data = {
+            'uploaded_files': uploaded_files,
+            'errors': errors
+        }
+        
+        if errors and not uploaded_files:
+            # If all files failed to upload
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        elif errors:
+            # If some files were uploaded but others failed
+            return Response(response_data, status=status.HTTP_207_MULTI_STATUS)
+            
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
