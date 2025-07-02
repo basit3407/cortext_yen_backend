@@ -681,14 +681,14 @@ class FabricColorCategorySerializer(serializers.ModelSerializer):
 
 class MediaUploadsSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = MediaUploads
         fields = ['id', 'file', 'file_url']
         extra_kwargs = {
             'file': {'required': True, 'allow_null': False}
         }
-
+    
     def get_file_url(self, obj):
         if obj.file:
             request = self.context.get('request')
