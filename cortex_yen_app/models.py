@@ -130,6 +130,12 @@ class CustomUser(AbstractUser):
         max_length=10, choices=AUTH_METHOD_CHOICES, default="email"
     )
 
+    def save(self, *args, **kwargs):
+        # Normalize email to lowercase before saving
+        if self.email:
+            self.email = self.email.strip().lower()
+        super().save(*args, **kwargs)
+
     def generate_verification_token(self):
         token = get_random_string(length=32)
         self.verification_token = token

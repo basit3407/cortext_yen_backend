@@ -29,6 +29,8 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.forms import SetPasswordForm
 from django.db.models import Count, Q
 import logging
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +62,22 @@ class UserSerializer(serializers.ModelSerializer):
             "auth_method",
         ]
 
+    def validate_email(self, value):
+        # Normalize the email by converting to lowercase and stripping whitespace
+        value = value.strip().lower()
+        return value
+
     def create(self, validated_data):
         # Extract and remove the password from validated_data
         password = validated_data.pop("password", None)
+        email = validated_data.get('email', '').strip().lower()
+        validated_data['email'] = email
+
+        # Check if user exists with case-insensitive email lookup
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                {"email": "A user with that email already exists."}
+            )
 
         # Create a new CustomUser instance
         try:
@@ -92,12 +107,30 @@ class UserSerializer(serializers.ModelSerializer):
         from_email = settings.DEFAULT_FROM_EMAIL
         recipient_list = [user.email]
         subject = "Verify your email address"
-        message = f"Hi {user.name},\n\nPlease click on the following link to verify your email address:\n\n{settings.FRONTEND_URL}/verify-email/{verification_token}/\n\nThanks!"
+        verification_url = f"{settings.FRONTEND_URL}/verify-email/{verification_token}/"
 
         try:
-            send_mail(subject, message, from_email, recipient_list)
+            # Load and render email template
+            html_message = render_to_string(
+                "verification_email_template.html",
+                {
+                    "name": user.name,
+                    "verification_url": verification_url,
+                    "button_text": "Verify Email Address"
+                },
+            )
+
+            # Send email
+            email_message = EmailMessage(
+                subject=subject,
+                body=html_message,
+                from_email=from_email,
+                to=recipient_list,
+            )
+            email_message.content_subtype = "html"
+            email_message.send()
         except Exception as e:
-            print(f"Failed to send email, error: {str(e)}")
+            logger.error(f"Failed to send verification email: {str(e)}")
             raise
 
 
@@ -106,11 +139,19 @@ class UserLoginSerializer(serializers.Serializer):
     password = serializers.CharField()
 
     def validate(self, attrs):
-        username = attrs.get("username")
+        username = attrs.get("username", "").strip().lower()  # Normalize username/email
         password = attrs.get("password")
 
         if username and password:
-            user = authenticate(username=username, password=password)
+            # Try case-insensitive lookup first
+            try:
+                user = CustomUser.objects.get(email__iexact=username)
+                # If found, use their actual username for authentication
+                user = authenticate(username=user.username, password=password)
+            except CustomUser.DoesNotExist:
+                # If not found by email, try regular authentication
+                user = authenticate(username=username, password=password)
+
             if not user:
                 msg = "Unable to log in with provided credentials."
                 raise serializers.ValidationError(msg)
@@ -550,6 +591,21 @@ class BlogSerializer(serializers.ModelSerializer):
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
+    def validate_email(self, value):
+        # Normalize the email by converting to lowercase and stripping whitespace
+        value = value.strip().lower()
+        
+        # Check if user exists with this email using case-insensitive lookup
+        try:
+            user = CustomUser.objects.get(email__iexact=value)
+            return value
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError("No account found with this email address.")
+        except CustomUser.MultipleObjectsReturned:
+            # In case there are multiple users with the same email (should not happen due to unique constraint)
+            user = CustomUser.objects.filter(email__iexact=value).first()
+            return value
+
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     """
@@ -681,14 +737,14 @@ class FabricColorCategorySerializer(serializers.ModelSerializer):
 
 class MediaUploadsSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = MediaUploads
         fields = ['id', 'file', 'file_url']
         extra_kwargs = {
             'file': {'required': True, 'allow_null': False}
         }
-
+    
     def get_file_url(self, obj):
         if obj.file:
             request = self.context.get('request')
