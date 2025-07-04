@@ -364,59 +364,55 @@ class CustomPasswordResetView(APIView):
     )
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if serializer.is_valid():
+            email = serializer.validated_data["email"].strip().lower()
+            
+            try:
+                # Use case-insensitive lookup
+                user = CustomUser.objects.filter(email__iexact=email).first()
+                if not user:
+                    return Response(
+                        {"error": "No account found with this email address."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
-        email = serializer.validated_data["email"]
+                # Generate password reset token
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
 
-        user = CustomUser.objects.filter(email=email).first()
+                # Build reset URL
+                reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
 
-        if not user:
-            # User with the provided email doesn't exist
-            return Response(
-                {"error": "User with this email does not exist."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+                # Load and render email template
+                html_message = render_to_string(
+                    "reset_password_email_template.html",
+                    {
+                        "user": {"name": user.name},  # Pass user data as dict with name
+                        "reset_url": reset_url,
+                    },
+                )
 
-        if user.auth_method == "google":
-            return Response(
-                {
-                    "error": "You signed in using Google. Please use Google account recovery."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+                # Send email
+                email_message = EmailMessage(
+                    subject="Password Reset Request",
+                    body=html_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[user.email],
+                )
+                email_message.content_subtype = "html"
+                email_message.send()
 
-        reset_url = (
-            f"{settings.FRONTEND_URL}/newPass/{urlsafe_base64_encode(force_bytes(user.pk))}/"
-            f"{token_generator.make_token(user)}/"
-        )
-        name = user.first_name
+                logger.info(f"Password reset email sent successfully to {email}")
+                return Response({"detail": "Password reset email has been sent."})
 
-        subject = "Your password reset request"
-        button_text = "Reset Your Password"
+            except Exception as e:
+                logger.error(f"Failed to send password reset email to {email}: {str(e)}")
+                return Response(
+                    {"error": "Failed to send password reset email. Please try again later."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
-        # Render HTML content with a button
-        html_content = render_to_string(
-            "reset_password_email_template.html",
-            {
-                "name": name,
-                "reset_url": reset_url,
-                "button_text": button_text,
-            },
-        )
-
-        from_email = settings.DEFAULT_FROM_EMAIL
-
-        recipient_list = [email]
-
-        try:
-            email = EmailMessage(subject, html_content, from_email, recipient_list)
-            email.content_subtype = "html"  # Set content type to HTML
-            email.send()
-            return Response(status=status.HTTP_200_OK)
-        except Exception as e:
-            print(f"Error sending email: {e}")
-            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomPasswordResetConfirmView(GenericAPIView):

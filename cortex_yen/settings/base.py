@@ -118,7 +118,17 @@ django_heroku.settings(locals())
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-FRONTEND_URL = "www.corleeandco.com"
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' if not DEBUG else 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'support@corleeandco.com'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'support@corleeandco.com'  # Replace with your actual email
+EMAIL_HOST_PASSWORD = ''  # Set this in production.py
+
+# Frontend URL
+FRONTEND_URL = "https://www.corleeandco.com"
 
 # Site URL for absolute URLs in serializers
 SITE_URL = "https://www.corleeandco.com"

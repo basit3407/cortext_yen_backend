@@ -29,6 +29,8 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.forms import SetPasswordForm
 from django.db.models import Count, Q
 import logging
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
 
@@ -92,12 +94,30 @@ class UserSerializer(serializers.ModelSerializer):
         from_email = settings.DEFAULT_FROM_EMAIL
         recipient_list = [user.email]
         subject = "Verify your email address"
-        message = f"Hi {user.name},\n\nPlease click on the following link to verify your email address:\n\n{settings.FRONTEND_URL}/verify-email/{verification_token}/\n\nThanks!"
+        verification_url = f"{settings.FRONTEND_URL}/verify-email/{verification_token}/"
 
         try:
-            send_mail(subject, message, from_email, recipient_list)
+            # Load and render email template
+            html_message = render_to_string(
+                "verification_email_template.html",
+                {
+                    "name": user.name,
+                    "verification_url": verification_url,
+                    "button_text": "Verify Email Address"
+                },
+            )
+
+            # Send email
+            email_message = EmailMessage(
+                subject=subject,
+                body=html_message,
+                from_email=from_email,
+                to=recipient_list,
+            )
+            email_message.content_subtype = "html"
+            email_message.send()
         except Exception as e:
-            print(f"Failed to send email, error: {str(e)}")
+            logger.error(f"Failed to send verification email: {str(e)}")
             raise
 
 
@@ -549,6 +569,16 @@ class BlogSerializer(serializers.ModelSerializer):
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+    def validate_email(self, value):
+        # Normalize the email by converting to lowercase and stripping whitespace
+        value = value.strip().lower()
+        
+        # Check if user exists with this email
+        if not CustomUser.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("No account found with this email address.")
+        
+        return value
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
