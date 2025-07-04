@@ -119,19 +119,19 @@ django_heroku.settings(locals())
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' if not DEBUG else 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'support@corleeandco.com'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'support@corleeandco.com'  # Replace with your actual email
-EMAIL_HOST_PASSWORD = ''  # Set this in production.py
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'support@corleeandco.com')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'support@corleeandco.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')  # Set this in environment or production.py
 
-# Frontend URL
-FRONTEND_URL = "https://www.corleeandco.com"
+# Frontend URL for development
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000' if DEBUG else 'https://www.corleeandco.com')
 
 # Site URL for absolute URLs in serializers
-SITE_URL = "https://www.corleeandco.com"
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000' if DEBUG else 'https://www.corleeandco.com')
 
 # AWS and CloudFront Configuration
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")

@@ -188,38 +188,35 @@ class GoogleLoginAPIView(APIView):
             decoded_token = id_token.verify_firebase_token(
                 id_token_value, requests.Request(), "corlee-85a80"
             )
-            email = decoded_token["email"]
+            email = decoded_token["email"].strip().lower()  # Normalize email
             name = decoded_token.get("name", "")
 
             try:
-                user = CustomUser.objects.get(email=email)
+                # Use case-insensitive lookup
+                user = CustomUser.objects.get(email__iexact=email)
+                if not user:
+                    # Create new user if not found
+                    user = CustomUser.objects.create_user(email=email, username=email)
+                    user.name = name
+                    user.auth_method = "google"
+                    user.is_verified = True
+                    user.save()
+                    # Create a cart for the new user
+                    Cart.objects.create(user=user)
 
-            except CustomUser.DoesNotExist:
+            except Exception as e:
+                logger.error(f"Error in Google login: {str(e)}")
+                return Response(
+                    {"error": "Authentication failed"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
 
-                user = CustomUser.objects.create_user(email=email, username=email)
-                user.name = name
-                user.auth_method = "google"
-                user.is_verified = True
-                user.save()
-                # Create a cart for the new user
-                Cart.objects.create(user=user)
-
-                # authenticated_user = authenticate(username=user.username, password=None)
-                # print("auth user = ", authenticated_user)
-
-                # if authenticated_user is not None:
             token, _ = Token.objects.get_or_create(user=user)
             user_data = UserSerializer(user).data
             return Response(
                 {"token": token.key, "user": user_data},
                 status=status.HTTP_200_OK,
             )
-            # else:
-            #     print("i am called")
-            #     return Response(
-            #         {"error": "Authentication failed"},
-            #         status=status.HTTP_401_UNAUTHORIZED,
-            #     )
 
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -360,59 +357,87 @@ class CustomPasswordResetView(APIView):
             200: openapi.Response(description="Password reset email sent"),
             400: openapi.Response(description="Invalid data or user does not exist"),
             429: openapi.Response(description="Too many requests"),
+            500: openapi.Response(description="Internal server error"),
         },
     )
     def post(self, request):
-        serializer = PasswordResetRequestSerializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data["email"].strip().lower()
+        try:
+            logger.info("Starting password reset process")
+            serializer = PasswordResetRequestSerializer(data=request.data)
+            
+            if not serializer.is_valid():
+                logger.warning(f"Invalid serializer data: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            email = serializer.validated_data["email"]  # Email is already normalized in serializer
+            logger.info(f"Processing password reset for email: {email}")
             
             try:
                 # Use case-insensitive lookup
-                user = CustomUser.objects.filter(email__iexact=email).first()
-                if not user:
-                    return Response(
-                        {"error": "No account found with this email address."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
+                user = CustomUser.objects.get(email__iexact=email)
+                logger.info(f"Found user with ID: {user.id}")
+                
                 # Generate password reset token
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
+                logger.info("Generated reset token")
 
                 # Build reset URL
                 reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+                logger.info(f"Reset URL generated: {reset_url}")
 
-                # Load and render email template
-                html_message = render_to_string(
-                    "reset_password_email_template.html",
-                    {
-                        "user": {"name": user.name},  # Pass user data as dict with name
-                        "reset_url": reset_url,
-                    },
-                )
+                try:
+                    # Load and render email template
+                    html_message = render_to_string(
+                        "reset_password_email_template.html",
+                        {
+                            "name": user.name or user.username,  # Fallback to username if name is not set
+                            "reset_url": reset_url,
+                        },
+                    )
+                    logger.info("Email template rendered successfully")
 
-                # Send email
-                email_message = EmailMessage(
-                    subject="Password Reset Request",
-                    body=html_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[user.email],
-                )
-                email_message.content_subtype = "html"
-                email_message.send()
+                    # Send email
+                    email_message = EmailMessage(
+                        subject="Password Reset Request",
+                        body=html_message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[user.email],
+                    )
+                    email_message.content_subtype = "html"
+                    email_message.send()
+                    logger.info("Password reset email sent successfully")
 
-                logger.info(f"Password reset email sent successfully to {email}")
-                return Response({"detail": "Password reset email has been sent."})
+                    return Response(
+                        {"message": "Password reset email sent successfully."},
+                        status=status.HTTP_200_OK,
+                    )
+                except Exception as email_error:
+                    logger.error(f"Error sending email: {str(email_error)}")
+                    return Response(
+                        {
+                            "error": "Failed to send password reset email.",
+                            "details": str(email_error)
+                        },
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
 
-            except Exception as e:
-                logger.error(f"Failed to send password reset email to {email}: {str(e)}")
+            except CustomUser.DoesNotExist:
+                logger.warning(f"No user found with email: {email}")
                 return Response(
-                    {"error": "Failed to send password reset email. Please try again later."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    {"error": "No account found with this email address."},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            logger.error(f"Unexpected error in password reset: {str(e)}", exc_info=True)
+            return Response(
+                {
+                    "error": "An unexpected error occurred while processing your request.",
+                    "details": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class CustomPasswordResetConfirmView(GenericAPIView):

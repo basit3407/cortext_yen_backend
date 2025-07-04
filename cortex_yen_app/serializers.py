@@ -62,9 +62,22 @@ class UserSerializer(serializers.ModelSerializer):
             "auth_method",
         ]
 
+    def validate_email(self, value):
+        # Normalize the email by converting to lowercase and stripping whitespace
+        value = value.strip().lower()
+        return value
+
     def create(self, validated_data):
         # Extract and remove the password from validated_data
         password = validated_data.pop("password", None)
+        email = validated_data.get('email', '').strip().lower()
+        validated_data['email'] = email
+
+        # Check if user exists with case-insensitive email lookup
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                {"email": "A user with that email already exists."}
+            )
 
         # Create a new CustomUser instance
         try:
@@ -126,11 +139,19 @@ class UserLoginSerializer(serializers.Serializer):
     password = serializers.CharField()
 
     def validate(self, attrs):
-        username = attrs.get("username")
+        username = attrs.get("username", "").strip().lower()  # Normalize username/email
         password = attrs.get("password")
 
         if username and password:
-            user = authenticate(username=username, password=password)
+            # Try case-insensitive lookup first
+            try:
+                user = CustomUser.objects.get(email__iexact=username)
+                # If found, use their actual username for authentication
+                user = authenticate(username=user.username, password=password)
+            except CustomUser.DoesNotExist:
+                # If not found by email, try regular authentication
+                user = authenticate(username=username, password=password)
+
             if not user:
                 msg = "Unable to log in with provided credentials."
                 raise serializers.ValidationError(msg)
@@ -574,11 +595,16 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         # Normalize the email by converting to lowercase and stripping whitespace
         value = value.strip().lower()
         
-        # Check if user exists with this email
-        if not CustomUser.objects.filter(email__iexact=value).exists():
+        # Check if user exists with this email using case-insensitive lookup
+        try:
+            user = CustomUser.objects.get(email__iexact=value)
+            return value
+        except CustomUser.DoesNotExist:
             raise serializers.ValidationError("No account found with this email address.")
-        
-        return value
+        except CustomUser.MultipleObjectsReturned:
+            # In case there are multiple users with the same email (should not happen due to unique constraint)
+            user = CustomUser.objects.filter(email__iexact=value).first()
+            return value
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
