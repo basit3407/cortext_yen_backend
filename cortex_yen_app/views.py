@@ -77,6 +77,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.core.mail import send_mail
 from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator as token_generator
@@ -363,24 +364,27 @@ class CustomPasswordResetView(APIView):
     def post(self, request):
         try:
             logger.info("Starting password reset process")
+            logger.info(f"Request data received: {request.data}")
+            
             serializer = PasswordResetRequestSerializer(data=request.data)
             
             if not serializer.is_valid():
                 logger.warning(f"Invalid serializer data: {serializer.errors}")
+                logger.warning(f"Original request data: {request.data}")
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             email = serializer.validated_data["email"]  # Email is already normalized in serializer
-            logger.info(f"Processing password reset for email: {email}")
+            logger.info(f"Processing password reset for normalized email: {email}")
             
             try:
                 # Use case-insensitive lookup
                 user = CustomUser.objects.get(email__iexact=email)
-                logger.info(f"Found user with ID: {user.id}")
+                logger.info(f"Found user with ID: {user.id}, username: {user.username}, email: {user.email}")
                 
                 # Generate password reset token
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
-                logger.info("Generated reset token")
+                logger.info(f"Generated reset token for user {user.id}")
 
                 # Build reset URL
                 reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
@@ -388,12 +392,16 @@ class CustomPasswordResetView(APIView):
 
                 try:
                     # Load and render email template
+                    context = {
+                        "name": user.name or user.username,  # Fallback to username if name is not set
+                        "reset_url": reset_url,
+                        "button_text": "Reset Password"
+                    }
+                    logger.info(f"Preparing email template with context: {context}")
+                    
                     html_message = render_to_string(
                         "reset_password_email_template.html",
-                        {
-                            "name": user.name or user.username,  # Fallback to username if name is not set
-                            "reset_url": reset_url,
-                        },
+                        context,
                     )
                     logger.info("Email template rendered successfully")
 
@@ -405,6 +413,8 @@ class CustomPasswordResetView(APIView):
                         to=[user.email],
                     )
                     email_message.content_subtype = "html"
+                    
+                    logger.info(f"Attempting to send email from {settings.DEFAULT_FROM_EMAIL} to {user.email}")
                     email_message.send()
                     logger.info("Password reset email sent successfully")
 
@@ -413,7 +423,8 @@ class CustomPasswordResetView(APIView):
                         status=status.HTTP_200_OK,
                     )
                 except Exception as email_error:
-                    logger.error(f"Error sending email: {str(email_error)}")
+                    logger.error(f"Error sending email: {str(email_error)}", exc_info=True)
+                    logger.error(f"Email configuration: DEFAULT_FROM_EMAIL={settings.DEFAULT_FROM_EMAIL}, EMAIL_BACKEND={settings.EMAIL_BACKEND}")
                     return Response(
                         {
                             "error": "Failed to send password reset email.",
@@ -424,6 +435,9 @@ class CustomPasswordResetView(APIView):
 
             except CustomUser.DoesNotExist:
                 logger.warning(f"No user found with email: {email}")
+                # Log all existing user emails for debugging
+                existing_emails = list(CustomUser.objects.values_list('email', flat=True))
+                logger.warning(f"Existing user emails in database: {existing_emails}")
                 return Response(
                     {"error": "No account found with this email address."},
                     status=status.HTTP_400_BAD_REQUEST
@@ -431,6 +445,7 @@ class CustomPasswordResetView(APIView):
             
         except Exception as e:
             logger.error(f"Unexpected error in password reset: {str(e)}", exc_info=True)
+            logger.error(f"Request data: {request.data}")
             return Response(
                 {
                     "error": "An unexpected error occurred while processing your request.",
