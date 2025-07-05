@@ -205,71 +205,58 @@ CKEDITOR_5_CONFIGS = {
             "|",
             "bold",
             "italic",
-            "underline",
-            "strikethrough",
             "link",
             "bulletedList",
             "numberedList",
-            "blockQuote",
             "imageUpload",
             "|",
-            "fontFamily",
-            "fontSize",
-            "fontColor",
-            "fontBackgroundColor",
-            "|",
             "alignment",
-            "outdent",
-            "indent",
             "|",
-            "insertTable",
-            "mediaEmbed",
             "undo",
             "redo",
         ],
         "height": 300,
         "width": "auto",
-        "fontFamily": {
-            "options": [
-                "default",
-                "Arial, Helvetica, sans-serif",
-                "Courier New, Courier, monospace",
-                "Georgia, serif",
-                "Lucida Sans Unicode, Lucida Grande, sans-serif",
-                "Tahoma, Geneva, sans-serif",
-                "Times New Roman, Times, serif",
-                "Trebuchet MS, Helvetica, sans-serif",
-                "Verdana, Geneva, sans-serif",
-            ],
-        },
         "fontSize": {
             "options": [
-                "8",
-                "10",
                 "12",
                 "14",
                 "16",
                 "18",
                 "20",
                 "24",
-                "28",
-                "32",
-                "36",
-                "40",
-                "48",
             ],
-            "supportAllValues": True,
-        },
-        "fontColor": {
-            "columns": 5,
-            "documentColors": 10,
-        },
-        "fontBackgroundColor": {
-            "columns": 5,
-            "documentColors": 10,
+            "supportAllValues": False,
         },
         "alignment": {
-            "options": ["left", "right", "center", "justify"],
+            "options": ["left", "center", "right"],
         },
+        "image": {
+            "resizeUnit": "%",
+            "resizeOptions": [{
+                "name": "resizeImage:original",
+                "value": None,
+                "icon": "original"
+            },
+            {
+                "name": "resizeImage:50",
+                "value": "50",
+                "icon": "medium"
+            },
+            {
+                "name": "resizeImage:75",
+                "value": "75",
+                "icon": "large"
+            }],
+            "toolbar": [
+                "imageStyle:alignLeft",
+                "imageStyle:alignCenter",
+                "imageStyle:alignRight",
+                "|",
+                "resizeImage",
+                "|",
+                "imageTextAlternative"
+            ]
+        }
     }
 }

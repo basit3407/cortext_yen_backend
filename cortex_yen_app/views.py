@@ -6,7 +6,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
-from django.db.models import Count
+from django.db.models import Count, F
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, permission_classes
 from drf_yasg import openapi
@@ -35,6 +35,7 @@ from .serializers import (
     BlogCategoryCreateUpdateSerializer,
     BlogSerializer,
     BlogCreateUpdateSerializer,
+    BlogListSerializer,
     CartItemSerializer,
     ContactDetailsSerializer,
     ContactDetailsCreateUpdateSerializer,
@@ -92,6 +93,9 @@ from django.core.exceptions import ValidationError
 from django.http import Http404
 import logging
 from rest_framework.decorators import action
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 logger = logging.getLogger(__name__)
 
@@ -1347,22 +1351,27 @@ class EventViewSet(viewsets.ModelViewSet):
         return context
 
 
+class BlogPagination(CustomPagination):
+    """
+    Custom pagination for blogs with smaller page size to improve performance
+    """
+    page_size = 6  # Reduced page size for blogs due to rich content
+
 class BlogViewSet(viewsets.ModelViewSet):
     """
     API endpoint to manage blogs with pagination and filtering.
     
     Pagination Parameters:
     - page: Page number (default: 1)
-    - page_size: Number of items per page (default: 10)
+    - page_size: Number of items per page (default: 6)
     
     Filter Parameters:
     - category: Filter by blog category
     - search: Search in title, content, and category name
     - ordering: Sort by created_at, title, or view_count
     """
-    queryset = Blog.objects.all()
-    serializer_class = BlogSerializer
-    pagination_class = CustomPagination
+    queryset = Blog.objects.all()  # Default queryset for URL pattern generation
+    pagination_class = BlogPagination  # Use blog-specific pagination
     filterset_class = BlogFilter
     filter_backends = [
         DjangoFilterBackend,
@@ -1382,58 +1391,102 @@ class BlogViewSet(viewsets.ModelViewSet):
     ]
     ordering = ["-created_at"]  # Default ordering
     
+    def get_queryset(self):
+        """
+        Optimize queryset by using select_related for ForeignKey relationships
+        and defer heavy content fields for list view
+        """
+        queryset = Blog.objects.select_related(
+            'author',
+            'photo',
+            'category'
+        )
+        
+        # For list view, we don't need to fetch the content fields
+        if self.action == 'list':
+            queryset = queryset.defer('content', 'content_mandarin')
+            
+        return queryset.all()
+
     def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
+        if self.action == 'list':
+            return BlogListSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
             return BlogCreateUpdateSerializer
         return BlogSerializer
 
-    @swagger_auto_schema(responses={200: BlogSerializer(many=True)})
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+    @swagger_auto_schema(responses={200: BlogListSerializer(many=True)})
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(responses={200: BlogSerializer()})
     def retrieve(self, request, *args, **kwargs):
-        # Increment view count on retrieve
+        # Try to get from cache
+        cache_key = f'blog_detail_{kwargs.get("pk")}'
+        cached_response = cache.get(cache_key)
+        
+        if cached_response:
+            return Response(cached_response)
+            
+        # If not in cache, get from database
         instance = self.get_object()
-        instance.view_count += 1
-        instance.save()
-        return super().retrieve(request, *args, **kwargs)
+        
+        # Increment view count atomically
+        Blog.objects.filter(pk=instance.pk).update(view_count=F('view_count') + 1)
+        instance.refresh_from_db()
+        
+        serializer = self.get_serializer(instance)
+        response_data = serializer.data
+        
+        # Cache for 10 minutes
+        cache.set(cache_key, response_data, 60 * 10)
+        
+        return Response(response_data)
 
     @swagger_auto_schema(
         request_body=BlogCreateUpdateSerializer,
         responses={201: BlogSerializer()}
     )
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        response = super().create(request, *args, **kwargs)
+        cache.delete_pattern('blog_list*')  # Clear list cache
+        return response
 
     @swagger_auto_schema(
         request_body=BlogCreateUpdateSerializer,
         responses={200: BlogSerializer()}
     )
     def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
+        response = super().update(request, *args, **kwargs)
+        cache.delete_pattern('blog_list*')  # Clear list cache
+        cache.delete(f'blog_detail_{kwargs.get("pk")}')  # Clear detail cache
+        return response
 
     @swagger_auto_schema(
         request_body=BlogCreateUpdateSerializer,
         responses={200: BlogSerializer()}
     )
     def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
+        response = super().partial_update(request, *args, **kwargs)
+        cache.delete_pattern('blog_list*')  # Clear list cache
+        cache.delete(f'blog_detail_{kwargs.get("pk")}')  # Clear detail cache
+        return response
 
     @swagger_auto_schema(responses={204: "No Content"})
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
             self.perform_destroy(instance)
+            cache.delete_pattern('blog_list*')  # Clear list cache
+            cache.delete(f'blog_detail_{kwargs.get("pk")}')  # Clear detail cache
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Http404:
-            # If the blog doesn't exist, return 404
             return Response(
                 {"error": "Blog not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
-            # For other exceptions, return 400
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST

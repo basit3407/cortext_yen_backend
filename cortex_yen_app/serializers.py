@@ -139,7 +139,7 @@ class UserLoginSerializer(serializers.Serializer):
     password = serializers.CharField()
 
     def validate(self, attrs):
-        username = attrs.get("username", "").strip().lower()  # Normalize username/email
+        username = attrs.get("username")
         password = attrs.get("password")
 
         if username and password:
@@ -542,7 +542,42 @@ class BlogCategorySerializer(serializers.ModelSerializer):
         fields = ["id", "name", "name_mandarin"]
 
 
+class BlogListSerializer(serializers.ModelSerializer):
+    """
+    Lightweight serializer for blog list view - excludes heavy content fields
+    """
+    photo_url = serializers.SerializerMethodField()
+    author_name = serializers.CharField(source="author.username", read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    category_name_mandarin = serializers.CharField(source="category.name_mandarin", read_only=True, allow_null=True)
+
+    class Meta:
+        model = Blog
+        fields = [
+            "id",
+            "title",
+            "title_mandarin",
+            "author_name",
+            "view_count",
+            "category_name",
+            "category_name_mandarin",
+            "created_at",
+            "photo_url",
+        ]
+
+    def get_photo_url(self, obj):
+        if obj.photo and obj.photo.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.photo.file.url)
+            return f"{settings.SITE_URL}{obj.photo.file.url}"
+        return None
+
+
 class BlogSerializer(serializers.ModelSerializer):
+    """
+    Full serializer for blog detail view - includes all fields
+    """
     photo_url = serializers.SerializerMethodField()
     author_photo_url = serializers.SerializerMethodField()
     author_name = serializers.CharField(source="author.username", read_only=True)

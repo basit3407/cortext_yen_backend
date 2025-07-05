@@ -310,12 +310,12 @@ class BlogCategory(models.Model):
 
 
 class Blog(models.Model):
-    title = models.CharField(max_length=255)
-    title_mandarin = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, db_index=True)
+    title_mandarin = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     content = CKEditor5Field("Text", config_name="default")
     content_mandarin = CKEditor5Field("Text", config_name="default", blank=True, null=True)
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    view_count = models.PositiveIntegerField(default=0)  # New field for tracking views
+    view_count = models.PositiveIntegerField(default=0, db_index=True)
     photo = models.ForeignKey(
         MediaUploads,
         on_delete=models.DO_NOTHING,
@@ -324,7 +324,14 @@ class Blog(models.Model):
         blank=True,
     )
     category = models.ForeignKey(BlogCategory, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["category", "-created_at"]),
+            models.Index(fields=["-view_count", "-created_at"]),
+        ]
 
     def __str__(self):
         return self.title
