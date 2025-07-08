@@ -551,7 +551,7 @@ class FabricListAPIView(generics.ListAPIView):
     - item_code: Filter by item code
     - extra_categories: Filter by comma-separated list of category IDs (will match both main category and extra categories)
     """
-    queryset = Fabric.objects.all().order_by('-created_at')  # Sort by recently created
+    queryset = Fabric.objects.all().order_by('-created_at')  # Uses default manager that excludes deleted fabrics
     serializer_class = FabricSerializer
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
@@ -998,7 +998,9 @@ class FabricDeleteAPIView(generics.DestroyAPIView):
     )
     def delete(self, request, *args, **kwargs):
         try:
-            return super().delete(request, *args, **kwargs)
+            instance = self.get_object()
+            instance.delete(hard_delete=False)  # Use soft delete
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             logger.error(f"Error in FabricDeleteAPIView.delete: {str(e)}")
             return Response(
@@ -1081,7 +1083,7 @@ class FabricBulkDeleteAPIView(APIView):
                                     'reason': openapi.Schema(type=openapi.TYPE_STRING)
                                 }
                             ),
-                            description='List of fabrics that failed to delete with error details'
+                            description='List of fabrics that failed to delete'
                         )
                     }
                 )
@@ -1163,7 +1165,7 @@ class FabricBulkDeleteAPIView(APIView):
                     }
                     
                     # Attempt to delete the fabric
-                    fabric.delete()
+                    fabric.delete(hard_delete=False)  # Use soft delete
                     deleted_fabrics.append(fabric_info)
                     
                     logger.info(f"Successfully deleted fabric ID {fabric_id} ({fabric.title})")

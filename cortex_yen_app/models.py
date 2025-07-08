@@ -199,6 +199,17 @@ class ProductCategory(models.Model):
         super().delete(*args, **kwargs)
 
 
+class FabricManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+    def with_deleted(self):
+        return super().get_queryset()
+
+    def only_deleted(self):
+        return super().get_queryset().filter(is_deleted=True)
+
+
 class Fabric(models.Model):
     product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
     extra_categories = models.ManyToManyField(ProductCategory, related_name='extra_fabrics', blank=True)
@@ -225,6 +236,10 @@ class Fabric(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     is_hot_selling = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, db_index=True)
+
+    objects = FabricManager()
+    all_objects = models.Manager()  # Include deleted objects
 
     def validate_color_images(self):
         if not self.color_images.exists():
@@ -232,10 +247,20 @@ class Fabric(models.Model):
                 "You must add at least one color along with the primary image."
             )
 
-    def delete(self, *args, **kwargs):
-        # Allow deletion of fabric even if it's being used
-        # Related objects will be handled by their on_delete settings
-        super().delete(*args, **kwargs)
+    def delete(self, *args, hard_delete=False, **kwargs):
+        if hard_delete:
+            # Perform actual deletion
+            super().delete(*args, **kwargs)
+        else:
+            # Soft delete
+            self.is_deleted = True
+            self.save()
+            
+            # Remove from carts
+            CartItem.objects.filter(fabric=self).delete()
+            
+            # Remove from favorites
+            Favorite.objects.filter(fabric=self).delete()
 
     def __str__(self):
         return self.title
