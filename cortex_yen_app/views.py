@@ -1753,7 +1753,7 @@ def checkout(request):
 
         # Send email to user
         user_email = EmailMessage(
-            "Your Order Confirmation",
+            "Thank you for your order",  # Updated email subject
             customer_html_message,
             settings.DEFAULT_FROM_EMAIL,
             [request.user.email],
