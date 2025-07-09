@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New Order Notification - Corlee Admin</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f8f9fa;
+      }
+
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        background-color: #000000;
+        padding: 40px 30px;
+        text-align: center;
+      }
+
+      .logo {
+        color: #ffffff;
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+      }
+
+      .header-subtitle {
+        color: #cccccc;
+        font-size: 14px;
+        font-weight: 300;
+      }
+
+      .content {
+        padding: 50px 40px;
+        text-align: center;
+      }
+
+      .notification-badge {
+        background-color: #000000;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 20px;
+        display: inline-block;
+        margin-bottom: 20px;
+      }
+
+      .message {
+        font-size: 16px;
+        color: #666666;
+        line-height: 1.8;
+        margin-bottom: 30px;
+      }
+
+      .customer-details {
+        background-color: #f8f9fa;
+        padding: 25px;
+        border-radius: 6px;
+        margin: 30px 0;
+        text-align: left;
+        border: 1px solid #e9ecef;
+      }
+
+      .details-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #000000;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+
+      .detail-item {
+        margin-bottom: 10px;
+      }
+
+      .detail-label {
+        font-size: 12px;
+        color: #666666;
+        margin-bottom: 4px;
+      }
+
+      .detail-value {
+        font-size: 14px;
+        color: #000000;
+        font-weight: 500;
+      }
+
+      .order-number {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 6px;
+        margin: 25px auto;
+        border-left: 4px solid #000000;
+        border-right: 4px solid #000000;
+        text-align: center;
+        max-width: 400px;
+      }
+
+      .order-number-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000000;
+        margin-bottom: 8px;
+      }
+
+      .order-number-text {
+        font-size: 16px;
+        color: #666666;
+        font-family: "Courier New", monospace;
+        background-color: #ffffff;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #e9ecef;
+        display: inline-block;
+      }
+
+      .order-summary {
+        margin: 30px 0;
+        border-radius: 8px;
+        overflow-x: auto;
+        border: 1px solid #e9ecef;
+      }
+
+      .order-summary table {
+        width: 100%;
+        min-width: 500px;
+        border-collapse: collapse;
+        background-color: #ffffff;
+      }
+
+      .order-summary th {
+        background-color: #f8f9fa;
+        padding: 12px;
+        text-align: center;
+        font-weight: 600;
+        color: #000000;
+        font-size: 14px;
+        border-bottom: 2px solid #e9ecef;
+        white-space: nowrap;
+      }
+
+      .order-summary td {
+        padding: 12px;
+        text-align: center;
+        border-bottom: 1px solid #e9ecef;
+        color: #666666;
+        font-size: 14px;
+        vertical-align: middle;
+      }
+
+      .order-summary img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #e9ecef;
+        display: inline-block;
+        vertical-align: middle;
+      }
+
+      .action-buttons {
+        margin: 30px 0;
+      }
+
+      .action-button {
+        display: inline-block;
+        padding: 12px 24px;
+        margin: 0 10px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+
+      .primary-button {
+        background-color: #000000;
+        color: #ffffff !important;
+        border: 2px solid #000000;
+      }
+
+      .secondary-button {
+        background-color: #ffffff;
+        color: #000000 !important;
+        border: 2px solid #000000;
+      }
+
+      .footer {
+        background-color: #f8f9fa;
+        padding: 30px 40px;
+        text-align: center;
+        border-top: 1px solid #e9ecef;
+      }
+
+      .footer-text {
+        font-size: 13px;
+        color: #999999;
+        line-height: 1.6;
+      }
+
+      @media only screen and (max-width: 600px) {
+        .email-container {
+          margin: 10px;
+          border-radius: 0;
+        }
+
+        .content {
+          padding: 30px 20px;
+        }
+
+        .header {
+          padding: 30px 25px;
+        }
+
+        .logo {
+          font-size: 28px;
+        }
+
+        .details-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .order-summary {
+          margin: 20px -20px;
+          border-radius: 0;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .order-number {
+          margin: 20px;
+          max-width: none;
+        }
+
+        .action-buttons {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .action-button {
+          margin: 5px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      style="margin: 0; padding: 20px 0; background-color: #f8f9fa"
+    >
+      <tr>
+        <td align="center">
+          <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+              <div class="logo">CORLEE</div>
+              <div class="header-subtitle">Admin Order Notification</div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="content">
+              <div class="notification-badge">New Order Received</div>
+
+              <div class="order-number">
+                <div class="order-number-title">Order Reference Number</div>
+                <div class="order-number-text">{{ request_number }}</div>
+              </div>
+
+              <div class="customer-details">
+                <div class="details-title">Customer Information</div>
+                <div class="details-grid">
+                  <div class="detail-item">
+                    <div class="detail-label">Customer Name</div>
+                    <div class="detail-value">{{ customer_name }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Email</div>
+                    <div class="detail-value">{{ customer_email }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Company</div>
+                    <div class="detail-value">{{ company_name|default:"Not provided" }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Order Date</div>
+                    <div class="detail-value">{{ order_date }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="order-summary">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>S.No</th>
+                      <th>Order Date</th>
+                      <th>Item Code</th>
+                      <th>Image</th>
+                      <th>Quantity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ item.order_date }}</td>
+                      <td>{{ item.item_code }}</td>
+                      <td><img src="{{ item.image_url }}" alt="Fabric {{ item.item_code }}" /></td>
+                      <td>{{ item.quantity }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="action-buttons">
+                <a href="https://corlee3d.vercel.app/dashboard/orders/{{ order_id }}" class="action-button primary-button">
+                  View Order Details
+                </a>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+              <p class="footer-text">
+                This is an automated message from the Corlee Admin System.
+              </p>
+              <p class="footer-text" style="margin-top: 15px">
+                © 2024 Corlee. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html> 

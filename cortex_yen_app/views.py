@@ -96,6 +96,7 @@ from rest_framework.decorators import action
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
@@ -1727,80 +1728,60 @@ def checkout(request):
             related_order=order,
         )
 
-        # Generate the HTML table for the email
-        table_rows = format_html_join(
-            "\n",
-            "<tr><td>{}</td><td>{}</td><td>{}</td><td><img src='{}' width='50' height='50'></td><td>{}</td></tr>",
-            [
-                (
-                    idx,
-                    order.order_date.strftime("%Y-%m-%d"),  # Order Date
-                    item.fabric.item_code,  # Item Code
-                    (
-                        item.fabric.color_images.first().primary_image.file.url
-                        if item.fabric.color_images.exists()
-                        else ""
-                    ),
-                    item.quantity,
-                )
-                for idx, item in enumerate(cart_items, start=1)
-            ],
-        )
+        # Prepare order items for the email template
+        order_items = []
+        for idx, item in enumerate(cart_items, start=1):
+            order_items.append({
+                'order_date': order.order_date.strftime("%Y-%m-%d"),
+                'item_code': item.fabric.item_code,
+                'image_url': item.fabric.color_images.first().primary_image.file.url if item.fabric.color_images.exists() else "",
+                'quantity': item.quantity
+            })
 
-        table_html = format_html(
-            """
-            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="padding: 8px; text-align: left;">S.No</th>
-                        <th style="padding: 8px; text-align: left;">Order Date</th>
-                        <th style="padding: 8px; text-align: left;">Item Code</th>
-                        <th style="padding: 8px; text-align: left;">Image</th>
-                        <th style="padding: 8px; text-align: left;">Quantity</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {}
-                </tbody>
-            </table>
-            """,
-            table_rows,
-        )
+        # Prepare email content using the new template for customer
+        customer_context = {
+            'name': request.user.name,
+            'request_number': contact_request.request_number,
+            'order_items': order_items
+        }
 
-        # Prepare email content
-        user_email_subject = "Your Order Summary"
-        user_email_message = format_html(
-            f"""
-            <p>Dear {request.user.name},</p>
-            <p>Thank you for placing your order. Your request number to track this order is <strong>{contact_request.request_number}</strong>.</p>
-            <p>Below is the summary of your order:</p>
-            {table_html}
-            <p>We will process your order soon. Thank you for shopping with us!</p>
-            """
-        )
-
-        admin_email_subject = "New Order Received"
-        admin_email_message = format_html(
-            f"""
-            <p>A new order has been placed by {request.user.username}. Below is the summary of the order:</p>
-            {table_html}
-            """
+        # Render the customer template
+        customer_html_message = render_to_string(
+            'order_confirmation_email_template.html',
+            customer_context
         )
 
         # Send email to user
         user_email = EmailMessage(
-            user_email_subject,
-            user_email_message,
+            "Your Order Confirmation",
+            customer_html_message,
             settings.DEFAULT_FROM_EMAIL,
             [request.user.email],
         )
-        user_email.content_subtype = "html"  # To send the email in HTML format
+        user_email.content_subtype = "html"
         user_email.send()
+
+        # Prepare admin email content
+        admin_context = {
+            'request_number': contact_request.request_number,
+            'customer_name': request.user.name,
+            'customer_email': request.user.email,
+            'company_name': request.user.company_name,
+            'order_date': order.order_date.strftime("%Y-%m-%d %H:%M:%S"),
+            'order_items': order_items,
+            'order_id': order.id  # Using the actual order ID
+        }
+
+        # Render the admin template
+        admin_html_message = render_to_string(
+            'admin_order_notification_template.html',
+            admin_context
+        )
 
         # Send email to admin
         admin_email = EmailMessage(
-            admin_email_subject,
-            admin_email_message,
+            "New Order Received",
+            admin_html_message,
             settings.DEFAULT_FROM_EMAIL,
             ["corleeandco@gmail.com"],
         )
