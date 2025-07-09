@@ -128,7 +128,7 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'support@corleeandco.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')  # Set this in environment or production.py
 
 # Frontend URL for development
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000' if DEBUG else 'https://www.corleeandco.com')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://corleeandco.com')
 
 # Site URL for absolute URLs in serializers
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000' if DEBUG else 'https://www.corleeandco.com')
