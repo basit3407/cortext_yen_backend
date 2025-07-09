@@ -391,7 +391,7 @@ class CustomPasswordResetView(APIView):
                 logger.info(f"Generated reset token for user {user.id}")
 
                 # Build reset URL
-                reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+                reset_url = f"{settings.FRONTEND_URL}/newpass/{uid}/{token}/"
                 logger.info(f"Reset URL generated: {reset_url}")
 
                 try:
