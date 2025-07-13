@@ -19,7 +19,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "apikey"  # This is the string literal "apikey", not the API key itself
 EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
-DEFAULT_FROM_EMAIL = "support@corleeandco.com"
+DEFAULT_FROM_EMAIL = "CORLEE <support@corleeandco.com>"
 
 # Security settings
 SECURE_SSL_REDIRECT = True
