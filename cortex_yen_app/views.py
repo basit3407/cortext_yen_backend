@@ -11,7 +11,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, permission_classes
 from drf_yasg import openapi
 from django.utils.html import format_html, format_html_join
-from .filters import BlogFilter, FabricFilter
+from .filters import BlogFilter, FabricFilter, UserFilter
 from .pagination import CustomPagination
 from .models import (
     Blog,
@@ -2518,14 +2518,24 @@ class OrderViewSet(viewsets.ModelViewSet):
 # Users ViewSet for CRUD operations
 class UserViewSet(viewsets.ModelViewSet):
     """
-    API endpoint to manage users with pagination.
+    API endpoint to manage users with pagination and filtering.
     
     Pagination Parameters:
     - page: Page number (default: 1)
     - page_size: Number of items per page (default: 10)
+    
+    Filter Parameters:
+    - name: Filter by name (partial match)
+    - company_name: Filter by company name (partial match)
+    - address: Filter by address (partial match)
+    - phone: Filter by phone (partial match)
+    - mobile_phone: Filter by mobile phone (partial match)
+    - email: Filter by email (partial match)
     """
     serializer_class = UserSerializer
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
 
     def get_queryset(self):
         return CustomUser.objects.all().order_by('-date_joined')  # Sort by recently created

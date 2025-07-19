@@ -1,6 +1,6 @@
 import django_filters
 from django_filters import rest_framework as filters
-from .models import Fabric, ProductCategory, Blog, FabricColorCategory, BlogCategory
+from .models import Fabric, ProductCategory, Blog, FabricColorCategory, BlogCategory, CustomUser
 from django.db.models import Count, Q
 import logging
 
@@ -163,3 +163,16 @@ class FabricFilter(filters.FilterSet):
             Q(product_category_id__in=category_ids) |
             Q(extra_categories__id__in=category_ids)
         ).distinct()
+
+
+class UserFilter(filters.FilterSet):
+    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
+    company_name = filters.CharFilter(field_name="company_name", lookup_expr="icontains")
+    address = filters.CharFilter(field_name="address", lookup_expr="icontains")
+    phone = filters.CharFilter(field_name="phone", lookup_expr="icontains")
+    mobile_phone = filters.CharFilter(field_name="mobile_phone", lookup_expr="icontains")
+    email = filters.CharFilter(field_name="email", lookup_expr="icontains")
+
+    class Meta:
+        model = CustomUser
+        fields = ["name", "company_name", "address", "phone", "mobile_phone", "email"]
